@@ -617,7 +617,7 @@ impl<'a> Emitter<'a> {
     /// displayed, keeping the provided highlighting.
     fn msg_to_buffer(
         buffer: &mut StyledBuffer,
-        msg: &[(String, Style)],
+        msg: &[(&str, Style)],
         padding: usize,
         label: &str,
         override_style: Option<Style>,
@@ -690,7 +690,7 @@ impl<'a> Emitter<'a> {
     fn emit_message_default(
         &mut self,
         spans: &[SpanLabel],
-        msg: &[(String, Style)],
+        msg: &[(&str, Style)],
         code: &Option<String>,
         level: Level,
         max_line_num_len: usize,
@@ -905,7 +905,7 @@ impl<'a> Emitter<'a> {
         for msg in msgs {
             match self.emit_message_default(
                 &msg.spans[..],
-                &[(msg.message.clone(), Style::NoStyle)],
+                &[(&msg.message, Style::NoStyle)],
                 &msg.code,
                 msg.level,
                 max_line_num_len,
