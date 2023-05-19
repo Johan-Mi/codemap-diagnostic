@@ -691,7 +691,7 @@ impl<'a> Emitter<'a> {
         &mut self,
         spans: &[SpanLabel],
         msg: &[(&str, Style)],
-        code: &Option<String>,
+        code: Option<&str>,
         level: Level,
         max_line_num_len: usize,
         is_secondary: bool,
@@ -709,7 +709,7 @@ impl<'a> Emitter<'a> {
             Self::msg_to_buffer(&mut buffer, msg, max_line_num_len, "note", None);
         } else {
             buffer.append(0, &level.to_string(), Style::Level(level));
-            if let Some(code) = code.as_ref() {
+            if let Some(code) = code {
                 buffer.append(0, "[", Style::Level(level));
                 buffer.append(0, code, Style::Level(level));
                 buffer.append(0, "]", Style::Level(level));
@@ -906,7 +906,7 @@ impl<'a> Emitter<'a> {
             match self.emit_message_default(
                 &msg.spans[..],
                 &[(&msg.message, Style::NoStyle)],
-                &msg.code,
+                msg.code.as_deref(),
                 msg.level,
                 max_line_num_len,
                 false,
