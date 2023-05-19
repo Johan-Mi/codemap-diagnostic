@@ -602,21 +602,16 @@ impl<'a> Emitter<'a> {
     }
 
     fn get_max_line_num(&mut self, diagnostics: &[Diagnostic]) -> usize {
-        if let Some(cm) = self.cm {
-            diagnostics
-                .iter()
-                .map(|d| {
-                    d.spans
-                        .iter()
-                        .map(|span_label| cm.look_up_pos(span_label.span.high()).position.line)
-                        .max()
-                        .unwrap_or(0)
-                })
-                .max()
-                .unwrap_or(0)
-        } else {
-            0
-        }
+        self.cm
+            .as_ref()
+            .and_then(|cm| {
+                diagnostics
+                    .iter()
+                    .flat_map(|d| &d.spans)
+                    .map(|span_label| cm.look_up_pos(span_label.span.high()).position.line)
+                    .max()
+            })
+            .unwrap_or(0)
     }
 
     /// Add a left margin to every line but the first, given a padding length and the label being
