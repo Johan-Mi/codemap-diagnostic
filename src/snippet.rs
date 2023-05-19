@@ -141,21 +141,17 @@ impl Annotation {
     }
 
     pub fn has_label(&self) -> bool {
-        if let Some(ref label) = self.label {
-            // Consider labels with no text as effectively not being there
-            // to avoid weird output with unnecessary vertical lines, like:
-            //
-            //     X | fn foo(x: u32) {
-            //       | -------^------
-            //       | |      |
-            //       | |
-            //       |
-            //
-            // Note that this would be the complete output users would see.
-            !label.is_empty()
-        } else {
-            false
-        }
+        // Consider labels with no text as effectively not being there
+        // to avoid weird output with unnecessary vertical lines, like:
+        //
+        //     X | fn foo(x: u32) {
+        //       | -------^------
+        //       | |      |
+        //       | |
+        //       |
+        //
+        // Note that this would be the complete output users would see.
+        !self.label.as_deref().unwrap_or("").is_empty()
     }
 
     pub fn takes_space(&self) -> bool {
