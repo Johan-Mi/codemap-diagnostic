@@ -753,13 +753,13 @@ impl<'a> Emitter<'a> {
 
         // Print out the annotate source lines that correspond with the error
         for annotated_file in annotated_files {
+            // remember where we are in the output buffer for easy reference
+            let buffer_msg_line_offset = buffer.num_lines();
+
             // print out the span location and spacer before we print the annotated source
             // to do this, we need to know if this span will be primary
             let is_primary = primary_lo.file.name() == annotated_file.file.name();
             if is_primary {
-                // remember where we are in the output buffer for easy reference
-                let buffer_msg_line_offset = buffer.num_lines();
-
                 buffer.prepend(buffer_msg_line_offset, "--> ", Style::LineNumber);
                 let loc = primary_lo.clone();
                 buffer.append(
@@ -776,9 +776,6 @@ impl<'a> Emitter<'a> {
                     buffer.prepend(buffer_msg_line_offset, " ", Style::NoStyle);
                 }
             } else {
-                // remember where we are in the output buffer for easy reference
-                let buffer_msg_line_offset = buffer.num_lines();
-
                 // Add spacing line
                 draw_col_separator(&mut buffer, buffer_msg_line_offset, max_line_num_len + 1);
 
