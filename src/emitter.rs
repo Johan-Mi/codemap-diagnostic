@@ -91,7 +91,7 @@ impl<'a> Emitter<'a> {
             line_index: usize,
             ann: Annotation,
         ) {
-            for slot in file_vec.iter_mut() {
+            for slot in &mut *file_vec {
                 // Look through each of our files for the one we're adding to
                 if slot.file.name() == file.name() {
                     // See if we already have a line for it
@@ -671,7 +671,7 @@ impl<'a> Emitter<'a> {
         //                see how it *looks* with
         //                very *weird* formats
         //                see?
-        for (text, style) in msg.iter() {
+        for (text, style) in msg {
             let lines = text.split('\n').collect::<Vec<_>>();
             if lines.len() > 1 {
                 for (i, line) in lines.iter().enumerate() {
@@ -715,7 +715,7 @@ impl<'a> Emitter<'a> {
                 buffer.append(0, "]", Style::Level(level));
             }
             buffer.append(0, ": ", Style::HeaderMsg);
-            for (text, _) in msg.iter() {
+            for (text, _) in msg {
                 buffer.append(0, text, Style::HeaderMsg);
             }
         }
