@@ -14,7 +14,7 @@ use std::io;
 use std::io::prelude::*;
 use std::sync::Arc;
 use termcolor::{Buffer, Color, WriteColor};
-use termcolor::{BufferWriter, ColorChoice, ColorSpec, StandardStream};
+use termcolor::{BufferWriter, ColorChoice, ColorSpec};
 
 use crate::snippet::{Annotation, AnnotationType, Line, MultilineAnnotation, Style, StyledString};
 use crate::styled_buffer::StyledBuffer;
@@ -1011,9 +1011,7 @@ fn emit_to_destination(
     Ok(())
 }
 
-#[allow(dead_code)]
 enum Destination<'a> {
-    Terminal(StandardStream),
     Buffered(BufferWriter),
     Raw(Box<dyn Write + Send + 'a>),
 }
@@ -1021,7 +1019,6 @@ enum Destination<'a> {
 use self::Destination::Raw;
 
 enum WritableDst<'a, 'b> {
-    Terminal(&'b mut StandardStream),
     Buffered(&'b mut BufferWriter, Buffer),
     Raw(&'b mut Box<dyn Write + Send + 'a>),
 }
@@ -1029,22 +1026,11 @@ enum WritableDst<'a, 'b> {
 impl<'a> Destination<'a> {
     fn from_stderr(color: ColorConfig) -> Destination<'a> {
         let choice = color.to_color_choice();
-        // On Windows we'll be performing global synchronization on the entire
-        // system for emitting rustc errors, so there's no need to buffer
-        // anything.
-        //
-        // On non-Windows we rely on the atomicity of `write` to ensure errors
-        // don't get all jumbled up.
-        if cfg!(windows) {
-            Destination::Terminal(StandardStream::stderr(choice))
-        } else {
-            Destination::Buffered(BufferWriter::stderr(choice))
-        }
+        Destination::Buffered(BufferWriter::stderr(choice))
     }
 
     fn writable<'b>(&'b mut self) -> WritableDst<'a, 'b> {
         match self {
-            Destination::Terminal(t) => WritableDst::Terminal(t),
             Destination::Buffered(t) => {
                 let buf = t.buffer();
                 WritableDst::Buffered(t, buf)
@@ -1099,7 +1085,6 @@ impl<'a, 'b> WritableDst<'a, 'b> {
 
     fn set_color(&mut self, color: &ColorSpec) -> io::Result<()> {
         match self {
-            WritableDst::Terminal(t) => t.set_color(color),
             WritableDst::Buffered(_, t) => t.set_color(color),
             WritableDst::Raw(_) => Ok(()),
         }
@@ -1107,7 +1092,6 @@ impl<'a, 'b> WritableDst<'a, 'b> {
 
     fn reset(&mut self) -> io::Result<()> {
         match self {
-            WritableDst::Terminal(t) => t.reset(),
             WritableDst::Buffered(_, t) => t.reset(),
             WritableDst::Raw(_) => Ok(()),
         }
@@ -1117,7 +1101,6 @@ impl<'a, 'b> WritableDst<'a, 'b> {
 impl<'a, 'b> Write for WritableDst<'a, 'b> {
     fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
         match self {
-            WritableDst::Terminal(t) => t.write(bytes),
             WritableDst::Buffered(_, buf) => buf.write(bytes),
             WritableDst::Raw(w) => w.write(bytes),
         }
@@ -1125,7 +1108,6 @@ impl<'a, 'b> Write for WritableDst<'a, 'b> {
 
     fn flush(&mut self) -> io::Result<()> {
         match self {
-            WritableDst::Terminal(t) => t.flush(),
             WritableDst::Buffered(_, buf) => buf.flush(),
             WritableDst::Raw(w) => w.flush(),
         }
