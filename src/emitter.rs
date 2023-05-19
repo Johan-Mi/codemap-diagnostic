@@ -380,7 +380,7 @@ impl<'a> Emitter<'a> {
             annotations_position.push((p, annotation));
             for (j, next) in annotations.iter().enumerate() {
                 if j > i {
-                    let l = if let Some(ref label) = next.label {
+                    let l = if let Some(label) = &next.label {
                         label.len() + 2
                     } else {
                         0
@@ -546,7 +546,7 @@ impl<'a> Emitter<'a> {
             } else {
                 (pos + 2, annotation.start_col)
             };
-            if let Some(ref label) = annotation.label {
+            if let Some(label) = &annotation.label {
                 buffer.puts(line_offset + pos, code_offset + col, label, style);
             }
         }
@@ -1043,13 +1043,13 @@ impl<'a> Destination<'a> {
     }
 
     fn writable<'b>(&'b mut self) -> WritableDst<'a, 'b> {
-        match *self {
-            Destination::Terminal(ref mut t) => WritableDst::Terminal(t),
-            Destination::Buffered(ref mut t) => {
+        match self {
+            Destination::Terminal(t) => WritableDst::Terminal(t),
+            Destination::Buffered(t) => {
                 let buf = t.buffer();
                 WritableDst::Buffered(t, buf)
             }
-            Destination::Raw(ref mut t) => WritableDst::Raw(t),
+            Destination::Raw(t) => WritableDst::Raw(t),
         }
     }
 }
@@ -1098,17 +1098,17 @@ impl<'a, 'b> WritableDst<'a, 'b> {
     }
 
     fn set_color(&mut self, color: &ColorSpec) -> io::Result<()> {
-        match *self {
-            WritableDst::Terminal(ref mut t) => t.set_color(color),
-            WritableDst::Buffered(_, ref mut t) => t.set_color(color),
+        match self {
+            WritableDst::Terminal(t) => t.set_color(color),
+            WritableDst::Buffered(_, t) => t.set_color(color),
             WritableDst::Raw(_) => Ok(()),
         }
     }
 
     fn reset(&mut self) -> io::Result<()> {
-        match *self {
-            WritableDst::Terminal(ref mut t) => t.reset(),
-            WritableDst::Buffered(_, ref mut t) => t.reset(),
+        match self {
+            WritableDst::Terminal(t) => t.reset(),
+            WritableDst::Buffered(_, t) => t.reset(),
             WritableDst::Raw(_) => Ok(()),
         }
     }
@@ -1116,25 +1116,25 @@ impl<'a, 'b> WritableDst<'a, 'b> {
 
 impl<'a, 'b> Write for WritableDst<'a, 'b> {
     fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-        match *self {
-            WritableDst::Terminal(ref mut t) => t.write(bytes),
-            WritableDst::Buffered(_, ref mut buf) => buf.write(bytes),
-            WritableDst::Raw(ref mut w) => w.write(bytes),
+        match self {
+            WritableDst::Terminal(t) => t.write(bytes),
+            WritableDst::Buffered(_, buf) => buf.write(bytes),
+            WritableDst::Raw(w) => w.write(bytes),
         }
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        match *self {
-            WritableDst::Terminal(ref mut t) => t.flush(),
-            WritableDst::Buffered(_, ref mut buf) => buf.flush(),
-            WritableDst::Raw(ref mut w) => w.flush(),
+        match self {
+            WritableDst::Terminal(t) => t.flush(),
+            WritableDst::Buffered(_, buf) => buf.flush(),
+            WritableDst::Raw(w) => w.flush(),
         }
     }
 }
 
 impl<'a, 'b> Drop for WritableDst<'a, 'b> {
     fn drop(&mut self) {
-        if let WritableDst::Buffered(ref mut dst, ref mut buf) = *self {
+        if let WritableDst::Buffered(dst, buf) = self {
             drop(dst.print(buf));
         }
     }
