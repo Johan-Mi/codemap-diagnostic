@@ -62,10 +62,7 @@ impl<'a> Emitter<'a> {
     /// Creates an emitter wrapping stderr.
     pub fn stderr(color_config: ColorConfig, code_map: Option<&'a CodeMap>) -> Emitter<'a> {
         let dst = Destination::from_stderr(color_config);
-        Emitter {
-            dst: dst,
-            cm: code_map,
-        }
+        Emitter { dst, cm: code_map }
     }
 
     /// Creates an emitter wrapping a vector.
@@ -77,7 +74,7 @@ impl<'a> Emitter<'a> {
     }
 
     /// Creates an emitter wrapping a boxed `Write` trait object.
-    pub fn new(dst: Box<Write + Send + 'a>, code_map: Option<&'a CodeMap>) -> Emitter<'a> {
+    pub fn new(dst: Box<dyn Write + Send + 'a>, code_map: Option<&'a CodeMap>) -> Emitter<'a> {
         Emitter {
             dst: Raw(dst),
             cm: code_map,
@@ -106,7 +103,7 @@ impl<'a> Emitter<'a> {
                     }
                     // We don't have a line yet, create one
                     slot.lines.push(Line {
-                        line_index: line_index,
+                        line_index,
                         annotations: vec![ann],
                     });
                     slot.lines.sort();
@@ -115,9 +112,9 @@ impl<'a> Emitter<'a> {
             }
             // This is the first time we're seeing the file
             file_vec.push(FileWithAnnotatedLines {
-                file: file,
+                file,
                 lines: vec![Line {
-                    line_index: line_index,
+                    line_index,
                     annotations: vec![ann],
                 }],
                 multiline_depth: 0,
@@ -127,7 +124,7 @@ impl<'a> Emitter<'a> {
         let mut output = vec![];
         let mut multiline_annotations = vec![];
 
-        if let Some(ref cm) = cm {
+        if let Some(cm) = cm {
             for span_label in spans {
                 let mut loc = cm.look_up_span(span_label.span);
 
@@ -175,7 +172,7 @@ impl<'a> Emitter<'a> {
         for item in multiline_annotations.clone() {
             let ann = item.1;
             for item in multiline_annotations.iter_mut() {
-                let ref mut a = item.1;
+                let a = &mut item.1;
                 // Move all other multiline annotations overlapping with this one
                 // one level to the right.
                 if &ann != a
@@ -224,7 +221,7 @@ impl<'a> Emitter<'a> {
         let line_offset = buffer.num_lines();
 
         // First create the source line we will highlight.
-        buffer.puts(line_offset, code_offset, &source_string, Style::Quotation);
+        buffer.puts(line_offset, code_offset, source_string, Style::Quotation);
         buffer.puts(
             line_offset,
             0,
@@ -251,7 +248,7 @@ impl<'a> Emitter<'a> {
         // 4 | | }
         //   | |_^ test
         if line.annotations.len() == 1 {
-            if let Some(ref ann) = line.annotations.get(0) {
+            if let Some(ann) = line.annotations.get(0) {
                 if let AnnotationType::MultilineStart(depth) = ann.annotation_type {
                     if source_string
                         .chars()
@@ -437,8 +434,7 @@ impl<'a> Emitter<'a> {
                 .iter()
                 .filter(|a| !a.is_line())
                 .collect::<Vec<_>>()
-                .len()
-                == 0
+                .is_empty()
         {
             return vec![];
         }
@@ -560,7 +556,7 @@ impl<'a> Emitter<'a> {
                 (pos + 2, annotation.start_col)
             };
             if let Some(ref label) = annotation.label {
-                buffer.puts(line_offset + pos, code_offset + col, &label, style);
+                buffer.puts(line_offset + pos, code_offset + col, label, style);
             }
         }
 
@@ -615,7 +611,7 @@ impl<'a> Emitter<'a> {
     }
 
     fn get_max_line_num(&mut self, diagnostics: &[Diagnostic]) -> usize {
-        if let Some(ref cm) = self.cm {
+        if let Some(cm) = self.cm {
             diagnostics
                 .iter()
                 .map(|d| {
@@ -693,7 +689,7 @@ impl<'a> Emitter<'a> {
         //                see how it *looks* with
         //                very *weird* formats
         //                see?
-        for &(ref text, ref style) in msg.iter() {
+        for (text, style) in msg.iter() {
             let lines = text.split('\n').collect::<Vec<_>>();
             if lines.len() > 1 {
                 for (i, line) in lines.iter().enumerate() {
@@ -720,7 +716,7 @@ impl<'a> Emitter<'a> {
     ) -> io::Result<()> {
         let mut buffer = StyledBuffer::new();
 
-        if is_secondary && spans.len() == 0 {
+        if is_secondary && spans.is_empty() {
             // This is a secondary message with no span info
             for _ in 0..max_line_num_len {
                 buffer.prepend(0, " ", Style::NoStyle);
@@ -730,14 +726,14 @@ impl<'a> Emitter<'a> {
             buffer.append(0, ": ", Style::NoStyle);
             self.msg_to_buffer(&mut buffer, msg, max_line_num_len, "note", None);
         } else {
-            buffer.append(0, &level.to_string(), Style::Level(level.clone()));
+            buffer.append(0, &level.to_string(), Style::Level(*level));
             if let Some(code) = code.as_ref() {
-                buffer.append(0, "[", Style::Level(level.clone()));
-                buffer.append(0, &code, Style::Level(level.clone()));
-                buffer.append(0, "]", Style::Level(level.clone()));
+                buffer.append(0, "[", Style::Level(*level));
+                buffer.append(0, code, Style::Level(*level));
+                buffer.append(0, "]", Style::Level(*level));
             }
             buffer.append(0, ": ", Style::HeaderMsg);
-            for &(ref text, _) in msg.iter() {
+            for (text, _) in msg.iter() {
                 buffer.append(0, text, Style::HeaderMsg);
             }
         }
@@ -747,7 +743,7 @@ impl<'a> Emitter<'a> {
         let mut annotated_files = Emitter::preprocess_annotations(self.cm, spans);
 
         // Make sure our primary file comes first
-        let primary_lo = if let (Some(ref cm), Some(ref primary_span)) = (
+        let primary_lo = if let (Some(cm), Some(primary_span)) = (
             self.cm.as_ref(),
             spans.iter().find(|x| x.style == SpanStyle::Primary),
         ) {
@@ -758,7 +754,7 @@ impl<'a> Emitter<'a> {
             return Ok(());
         };
         if let Ok(pos) =
-            annotated_files.binary_search_by(|x| x.file.name().cmp(&primary_lo.file.name()))
+            annotated_files.binary_search_by(|x| x.file.name().cmp(primary_lo.file.name()))
         {
             annotated_files.swap(0, pos);
         }
@@ -885,7 +881,7 @@ impl<'a> Emitter<'a> {
                         buffer.puts(
                             last_buffer_line_num,
                             code_offset,
-                            &unannotated_line,
+                            unannotated_line,
                             Style::Quotation,
                         );
 
@@ -934,7 +930,7 @@ impl<'a> Emitter<'a> {
         }
 
         let mut dst = self.dst.writable();
-        match write!(dst, "\n") {
+        match writeln!(dst) {
             Err(e) => panic!("failed to emit error: {}", e),
             _ => match dst.flush() {
                 Err(e) => panic!("failed to emit error: {}", e),
@@ -1034,11 +1030,11 @@ fn emit_to_destination(
     let _buffer_lock = lock::acquire_global_lock("rustc_errors");
     for line in rendered_buffer {
         for part in line {
-            dst.apply_style(lvl.clone(), part.style)?;
+            dst.apply_style(*lvl, part.style)?;
             write!(dst, "{}", part.text)?;
             dst.reset()?;
         }
-        write!(dst, "\n")?;
+        writeln!(dst)?;
     }
     dst.flush()?;
     Ok(())
@@ -1048,7 +1044,7 @@ fn emit_to_destination(
 enum Destination<'a> {
     Terminal(StandardStream),
     Buffered(BufferWriter),
-    Raw(Box<Write + Send + 'a>),
+    Raw(Box<dyn Write + Send + 'a>),
 }
 
 use self::Destination::*;
@@ -1056,7 +1052,7 @@ use self::Destination::*;
 enum WritableDst<'a, 'b> {
     Terminal(&'b mut StandardStream),
     Buffered(&'b mut BufferWriter, Buffer),
-    Raw(&'b mut Box<Write + Send + 'a>),
+    Raw(&'b mut Box<dyn Write + Send + 'a>),
 }
 
 impl<'a> Destination<'a> {
