@@ -60,6 +60,7 @@ struct FileWithAnnotatedLines {
 
 impl<'a> Emitter<'a> {
     /// Creates an emitter wrapping stderr.
+    #[must_use]
     pub fn stderr(color_config: ColorConfig, code_map: Option<&'a CodeMap>) -> Emitter<'a> {
         let dst = Destination::from_stderr(color_config);
         Emitter { dst, cm: code_map }
@@ -74,6 +75,7 @@ impl<'a> Emitter<'a> {
     }
 
     /// Creates an emitter wrapping a boxed `Write` trait object.
+    #[must_use]
     pub fn new(dst: Box<dyn Write + Send + 'a>, code_map: Option<&'a CodeMap>) -> Emitter<'a> {
         Emitter {
             dst: Raw(dst),
@@ -171,7 +173,7 @@ impl<'a> Emitter<'a> {
             .sort_by(|a, b| (a.1.line_start, a.1.line_end).cmp(&(b.1.line_start, b.1.line_end)));
         for item in multiline_annotations.clone() {
             let ann = item.1;
-            for item in multiline_annotations.iter_mut() {
+            for item in &mut multiline_annotations {
                 let a = &mut item.1;
                 // Move all other multiline annotations overlapping with this one
                 // one level to the right.
@@ -202,7 +204,7 @@ impl<'a> Emitter<'a> {
             }
             add_annotation_to_file(&mut output, file, ann.line_end, ann.as_end());
         }
-        for file_vec in output.iter_mut() {
+        for file_vec in &mut output {
             file_vec.multiline_depth = max_depth;
         }
         output
@@ -253,7 +255,7 @@ impl<'a> Emitter<'a> {
                     if source_string
                         .chars()
                         .take(ann.start_col)
-                        .all(|c| c.is_whitespace())
+                        .all(char::is_whitespace)
                     {
                         let style = if ann.is_primary {
                             Style::UnderlinePrimary
@@ -450,7 +452,7 @@ impl<'a> Emitter<'a> {
         // 3 |
         // 4 |   }
         //   |
-        for pos in 0..line_len + 1 {
+        for pos in 0..=line_len {
             draw_col_separator(buffer, line_offset + pos + 1, width_offset - 2);
             buffer.putc(
                 line_offset + pos + 1,
@@ -514,7 +516,7 @@ impl<'a> Emitter<'a> {
             let pos = pos + 1;
 
             if pos > 1 && (annotation.has_label() || annotation.takes_space()) {
-                for p in line_offset + 1..line_offset + pos + 1 {
+                for p in (line_offset + 1)..=(line_offset + pos) {
                     buffer.putc(p, code_offset + annotation.start_col, '|', style);
                 }
             }
@@ -525,7 +527,7 @@ impl<'a> Emitter<'a> {
                     }
                 }
                 AnnotationType::MultilineEnd(depth) => {
-                    for p in line_offset..line_offset + pos + 1 {
+                    for p in line_offset..=(line_offset + pos) {
                         buffer.putc(p, width_offset + depth - 1, '|', style);
                     }
                 }
@@ -1000,7 +1002,7 @@ fn num_overlap(
     b_end: usize,
     inclusive: bool,
 ) -> bool {
-    let extra = if inclusive { 1 } else { 0 };
+    let extra = usize::from(inclusive);
 
     (a_start >= b_start && a_start < b_end + extra)
         || (b_start >= a_start && b_start < a_end + extra)
@@ -1056,7 +1058,7 @@ enum Destination<'a> {
     Raw(Box<dyn Write + Send + 'a>),
 }
 
-use self::Destination::*;
+use self::Destination::Raw;
 
 enum WritableDst<'a, 'b> {
     Terminal(&'b mut StandardStream),

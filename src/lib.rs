@@ -83,7 +83,7 @@ impl ::std::fmt::Display for Level {
 impl Level {
     fn color(self) -> ColorSpec {
         let mut spec = ColorSpec::new();
-        use self::Level::*;
+        use self::Level::{Bug, Error, Help, Note, Warning};
         match self {
             Bug | Error => {
                 spec.set_fg(Some(Color::Red)).set_intense(true);
@@ -101,8 +101,9 @@ impl Level {
         spec
     }
 
+    #[must_use]
     pub fn to_str(self) -> &'static str {
-        use self::Level::*;
+        use self::Level::{Bug, Error, Help, Note, Warning};
 
         match self {
             Bug => "error: internal compiler error",
@@ -129,7 +130,7 @@ pub struct SpanLabel {
     pub style: SpanStyle,
 }
 
-/// Underline style for a SpanLabel.
+/// Underline style for a `SpanLabel`.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum SpanStyle {
     Primary,
