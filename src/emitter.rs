@@ -603,7 +603,6 @@ impl<'a> Emitter<'a> {
 
     fn get_max_line_num(&mut self, diagnostics: &[Diagnostic]) -> usize {
         self.cm
-            .as_ref()
             .and_then(|cm| {
                 diagnostics
                     .iter()
