@@ -32,19 +32,19 @@
 //! }
 //! ```
 
-extern crate termcolor;
-extern crate codemap;
 extern crate atty;
+extern crate codemap;
+extern crate termcolor;
 
 use codemap::Span;
 
+mod emitter;
 mod lock;
 mod snippet;
 mod styled_buffer;
-mod emitter;
 
-pub use emitter::{ ColorConfig, Emitter };
-use termcolor::{ ColorSpec, Color };
+pub use emitter::{ColorConfig, Emitter};
+use termcolor::{Color, ColorSpec};
 
 /// A diagnostic message.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -86,20 +86,16 @@ impl Level {
         use self::Level::*;
         match self {
             Bug | Error => {
-                spec.set_fg(Some(Color::Red))
-                    .set_intense(true);
+                spec.set_fg(Some(Color::Red)).set_intense(true);
             }
             Warning => {
-                spec.set_fg(Some(Color::Yellow))
-                    .set_intense(cfg!(windows));
+                spec.set_fg(Some(Color::Yellow)).set_intense(cfg!(windows));
             }
             Note => {
-                spec.set_fg(Some(Color::Green))
-                    .set_intense(true);
+                spec.set_fg(Some(Color::Green)).set_intense(true);
             }
             Help => {
-                spec.set_fg(Some(Color::Cyan))
-                    .set_intense(true);
+                spec.set_fg(Some(Color::Cyan)).set_intense(true);
             }
         }
         spec
