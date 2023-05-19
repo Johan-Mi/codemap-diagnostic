@@ -993,7 +993,7 @@ fn overlaps(a1: &Annotation, a2: &Annotation, padding: usize) -> bool {
 }
 
 fn emit_to_destination(
-    rendered_buffer: &Vec<Vec<StyledString>>,
+    rendered_buffer: &[Vec<StyledString>],
     lvl: Level,
     dst: &mut Destination,
 ) -> io::Result<()> {
