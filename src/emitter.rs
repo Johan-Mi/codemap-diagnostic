@@ -168,8 +168,7 @@ impl<'a> Emitter<'a> {
         }
 
         // Find overlapping multiline annotations, put them at different depths
-        multiline_annotations
-            .sort_by(|a, b| (a.1.line_start, a.1.line_end).cmp(&(b.1.line_start, b.1.line_end)));
+        multiline_annotations.sort_by_key(|a| (a.1.line_start, a.1.line_end));
         for item in multiline_annotations.clone() {
             let ann = item.1;
             for item in &mut multiline_annotations {
@@ -299,7 +298,7 @@ impl<'a> Emitter<'a> {
         // the left, so the rightmost span needs to be rendered first,
         // otherwise the lines would end up needing to go over a message.
         let mut annotations = line.annotations.clone();
-        annotations.sort_by(|a, b| b.start_col.cmp(&a.start_col));
+        annotations.sort_by_key(|a| a.start_col);
 
         // First, figure out where each label will be positioned.
         //
@@ -561,9 +560,9 @@ impl<'a> Emitter<'a> {
         //   | |  |
         //   | |  something about `foo`
         //   | something about `fn foo()`
-        annotations_position.sort_by(|a, b| {
+        annotations_position.sort_by_key(|a| {
             // Decreasing order
-            a.1.len().cmp(&b.1.len()).reverse()
+            std::cmp::Reverse(a.1.len())
         });
 
         // Write the underlines.
