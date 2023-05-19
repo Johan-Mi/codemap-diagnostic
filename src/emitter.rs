@@ -428,7 +428,7 @@ impl<'a> Emitter<'a> {
 
         // If there are no annotations or the only annotations on this line are
         // MultilineLine, then there's only code being shown, stop processing.
-        if line.annotations.is_empty() || line.annotations.iter().find(|a| !a.is_line()).is_none() {
+        if line.annotations.iter().all(|a| a.is_line()) {
             return vec![];
         }
 
