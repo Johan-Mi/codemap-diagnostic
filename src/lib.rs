@@ -35,7 +35,6 @@
 use codemap::Span;
 
 mod emitter;
-mod lock;
 mod snippet;
 mod styled_buffer;
 

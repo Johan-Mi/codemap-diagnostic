@@ -1007,19 +1007,6 @@ fn emit_to_destination(
 ) -> io::Result<()> {
     let mut dst = dst.writable();
 
-    // In order to prevent error message interleaving, where multiple error lines get intermixed
-    // when multiple compiler processes error simultaneously, we emit errors with additional
-    // steps.
-    //
-    // On Unix systems, we write into a buffered terminal rather than directly to a terminal. When
-    // the .flush() is called we take the buffer created from the buffered writes and write it at
-    // one shot.  Because the Unix systems use ANSI for the colors, which is a text-based styling
-    // scheme, this buffered approach works and maintains the styling.
-    //
-    // On Windows, styling happens through calls to a terminal API. This prevents us from using the
-    // same buffering approach.  Instead, we use a global Windows mutex, which we acquire long
-    // enough to output the full error message, then we release.
-    let _buffer_lock = crate::lock::acquire_global_lock("rustc_errors");
     for line in rendered_buffer {
         for part in line {
             dst.apply_style(lvl, part.style)?;
