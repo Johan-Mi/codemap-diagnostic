@@ -38,9 +38,9 @@ pub enum ColorConfig {
 impl ColorConfig {
     fn to_color_choice(self) -> ColorChoice {
         match self {
-            ColorConfig::Always => ColorChoice::Always,
-            ColorConfig::Auto if atty::is(atty::Stream::Stderr) => ColorChoice::Auto,
-            ColorConfig::Never | ColorConfig::Auto => ColorChoice::Never,
+            Self::Always => ColorChoice::Always,
+            Self::Auto if atty::is(atty::Stream::Stderr) => ColorChoice::Auto,
+            Self::Never | Self::Auto => ColorChoice::Never,
         }
     }
 }
@@ -428,14 +428,7 @@ impl<'a> Emitter<'a> {
 
         // If there are no annotations or the only annotations on this line are
         // MultilineLine, then there's only code being shown, stop processing.
-        if line.annotations.is_empty()
-            || line
-                .annotations
-                .iter()
-                .filter(|a| !a.is_line())
-                .collect::<Vec<_>>()
-                .is_empty()
-        {
+        if line.annotations.is_empty() || line.annotations.iter().find(|a| !a.is_line()).is_none() {
             return vec![];
         }
 

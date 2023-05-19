@@ -19,8 +19,8 @@ pub struct StyledBuffer {
 }
 
 impl StyledBuffer {
-    pub fn new() -> StyledBuffer {
-        StyledBuffer {
+    pub fn new() -> Self {
+        Self {
             text: vec![],
             styles: vec![],
         }
