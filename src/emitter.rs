@@ -258,7 +258,7 @@ impl<'a> Emitter<'a> {
                         } else {
                             Style::UnderlineSecondary
                         };
-                        buffer.putc(line_offset, width_offset + depth - 1, '/', style);
+                        buffer.putc(line_offset, width_offset + depth - 1, '╭', style);
                         return vec![(depth, style)];
                     }
                 }
@@ -446,7 +446,7 @@ impl<'a> Emitter<'a> {
             buffer.putc(
                 line_offset + pos + 1,
                 width_offset - 2,
-                '|',
+                '│',
                 Style::LineNumber,
             );
         }
@@ -474,7 +474,7 @@ impl<'a> Emitter<'a> {
                 AnnotationType::MultilineStart(depth) | AnnotationType::MultilineEnd(depth) => {
                     draw_range(
                         buffer,
-                        '_',
+                        '─',
                         line_offset + pos,
                         width_offset + depth,
                         code_offset + annotation.start_col,
@@ -506,19 +506,21 @@ impl<'a> Emitter<'a> {
 
             if pos > 1 && (annotation.has_label() || annotation.takes_space()) {
                 for p in (line_offset + 1)..=(line_offset + pos) {
-                    buffer.putc(p, code_offset + annotation.start_col, '|', style);
+                    buffer.putc(p, code_offset + annotation.start_col, '│', style);
                 }
             }
             match annotation.annotation_type {
                 AnnotationType::MultilineStart(depth) => {
+                    buffer.putc(line_offset + pos, width_offset + depth - 1, '╭', style);
                     for p in line_offset + pos + 1..line_offset + line_len + 2 {
-                        buffer.putc(p, width_offset + depth - 1, '|', style);
+                        buffer.putc(p, width_offset + depth - 1, '│', style);
                     }
                 }
                 AnnotationType::MultilineEnd(depth) => {
-                    for p in line_offset..=(line_offset + pos) {
-                        buffer.putc(p, width_offset + depth - 1, '|', style);
+                    for p in line_offset..(line_offset + pos) {
+                        buffer.putc(p, width_offset + depth - 1, '│', style);
                     }
+                    buffer.putc(line_offset + pos, width_offset + depth - 1, '╰', style);
                 }
                 _ => (),
             }
@@ -929,7 +931,7 @@ impl<'a> Emitter<'a> {
 }
 
 fn draw_col_separator(buffer: &mut StyledBuffer, line: usize, col: usize) {
-    buffer.puts(line, col, "| ", Style::LineNumber);
+    buffer.puts(line, col, "│ ", Style::LineNumber);
 }
 
 fn draw_col_separator_no_space(buffer: &mut StyledBuffer, line: usize, col: usize) {
@@ -942,7 +944,7 @@ fn draw_col_separator_no_space_with_style(
     col: usize,
     style: Style,
 ) {
-    buffer.putc(line, col, '|', style);
+    buffer.putc(line, col, '│', style);
 }
 
 fn draw_range(
@@ -969,7 +971,7 @@ fn draw_multiline_line(
     depth: usize,
     style: Style,
 ) {
-    buffer.putc(line, offset + depth - 1, '|', style);
+    buffer.putc(line, offset + depth - 1, '│', style);
 }
 
 fn num_overlap(
