@@ -9,7 +9,7 @@
 // except according to those terms.
 
 use atty;
-use std::cmp::min;
+use std::cmp::{min, Ordering};
 use std::collections::HashMap;
 use std::io;
 use std::io::prelude::*;
@@ -36,8 +36,8 @@ pub enum ColorConfig {
 }
 
 impl ColorConfig {
-    fn to_color_choice(&self) -> ColorChoice {
-        match *self {
+    fn to_color_choice(self) -> ColorChoice {
+        match self {
             ColorConfig::Always => ColorChoice::Always,
             ColorConfig::Never => ColorChoice::Never,
             ColorConfig::Auto if atty::is(atty::Stream::Stderr) => ColorChoice::Auto,
@@ -85,7 +85,7 @@ impl<'a> Emitter<'a> {
         cm: Option<&'a CodeMap>,
         spans: &[SpanLabel],
     ) -> Vec<FileWithAnnotatedLines> {
-        fn add_annotation_to_file<'a>(
+        fn add_annotation_to_file(
             file_vec: &mut Vec<FileWithAnnotatedLines>,
             file: Arc<File>,
             line_index: usize,
@@ -633,7 +633,7 @@ impl<'a> Emitter<'a> {
     fn msg_to_buffer(
         &self,
         buffer: &mut StyledBuffer,
-        msg: &Vec<(String, Style)>,
+        msg: &[(String, Style)],
         padding: usize,
         label: &str,
         override_style: Option<Style>,
@@ -708,7 +708,7 @@ impl<'a> Emitter<'a> {
     fn emit_message_default(
         &mut self,
         spans: &[SpanLabel],
-        msg: &Vec<(String, Style)>,
+        msg: &[(String, Style)],
         code: &Option<String>,
         level: &Level,
         max_line_num_len: usize,
@@ -850,49 +850,57 @@ impl<'a> Emitter<'a> {
                 if line_idx < (annotated_file.lines.len() - 1) {
                     let line_idx_delta = annotated_file.lines[line_idx + 1].line_index
                         - annotated_file.lines[line_idx].line_index;
-                    if line_idx_delta > 2 {
-                        let last_buffer_line_num = buffer.num_lines();
-                        buffer.puts(last_buffer_line_num, 0, "...", Style::LineNumber);
+                    match line_idx_delta.cmp(&2) {
+                        Ordering::Less => {}
+                        Ordering::Equal => {
+                            let unannotated_line = annotated_file
+                                .file
+                                .source_line(annotated_file.lines[line_idx].line_index);
 
-                        // Set the multiline annotation vertical lines on `...` bridging line.
-                        for (depth, style) in &multilines {
-                            draw_multiline_line(
+                            let last_buffer_line_num = buffer.num_lines();
+
+                            buffer.puts(
+                                last_buffer_line_num,
+                                0,
+                                &(annotated_file.lines[line_idx + 1].line_index - 1).to_string(),
+                                Style::LineNumber,
+                            );
+                            draw_col_separator(
                                 &mut buffer,
                                 last_buffer_line_num,
-                                width_offset,
-                                *depth,
-                                *style,
+                                1 + max_line_num_len,
                             );
+                            buffer.puts(
+                                last_buffer_line_num,
+                                code_offset,
+                                unannotated_line,
+                                Style::Quotation,
+                            );
+
+                            for (depth, style) in &multilines {
+                                draw_multiline_line(
+                                    &mut buffer,
+                                    last_buffer_line_num,
+                                    width_offset,
+                                    *depth,
+                                    *style,
+                                );
+                            }
                         }
-                    } else if line_idx_delta == 2 {
-                        let unannotated_line = annotated_file
-                            .file
-                            .source_line(annotated_file.lines[line_idx].line_index);
+                        Ordering::Greater => {
+                            let last_buffer_line_num = buffer.num_lines();
+                            buffer.puts(last_buffer_line_num, 0, "...", Style::LineNumber);
 
-                        let last_buffer_line_num = buffer.num_lines();
-
-                        buffer.puts(
-                            last_buffer_line_num,
-                            0,
-                            &(annotated_file.lines[line_idx + 1].line_index - 1).to_string(),
-                            Style::LineNumber,
-                        );
-                        draw_col_separator(&mut buffer, last_buffer_line_num, 1 + max_line_num_len);
-                        buffer.puts(
-                            last_buffer_line_num,
-                            code_offset,
-                            unannotated_line,
-                            Style::Quotation,
-                        );
-
-                        for (depth, style) in &multilines {
-                            draw_multiline_line(
-                                &mut buffer,
-                                last_buffer_line_num,
-                                width_offset,
-                                *depth,
-                                *style,
-                            );
+                            // Set the multiline annotation vertical lines on `...` bridging line.
+                            for (depth, style) in &multilines {
+                                draw_multiline_line(
+                                    &mut buffer,
+                                    last_buffer_line_num,
+                                    width_offset,
+                                    *depth,
+                                    *style,
+                                );
+                            }
                         }
                     }
                 }
@@ -918,7 +926,7 @@ impl<'a> Emitter<'a> {
         for msg in msgs {
             match self.emit_message_default(
                 &msg.spans[..],
-                &vec![(msg.message.clone(), Style::NoStyle)],
+                &[(msg.message.clone(), Style::NoStyle)],
                 &msg.code,
                 &msg.level,
                 max_line_num_len,
@@ -932,10 +940,11 @@ impl<'a> Emitter<'a> {
         let mut dst = self.dst.writable();
         match writeln!(dst) {
             Err(e) => panic!("failed to emit error: {}", e),
-            _ => match dst.flush() {
-                Err(e) => panic!("failed to emit error: {}", e),
-                _ => (),
-            },
+            _ => {
+                if let Err(e) = dst.flush() {
+                    panic!("failed to emit error: {}", e)
+                }
+            }
         }
     }
 }
@@ -1165,11 +1174,8 @@ impl<'a, 'b> Write for WritableDst<'a, 'b> {
 
 impl<'a, 'b> Drop for WritableDst<'a, 'b> {
     fn drop(&mut self) {
-        match *self {
-            WritableDst::Buffered(ref mut dst, ref mut buf) => {
-                drop(dst.print(buf));
-            }
-            _ => {}
+        if let WritableDst::Buffered(ref mut dst, ref mut buf) = *self {
+            drop(dst.print(buf));
         }
     }
 }
