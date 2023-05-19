@@ -1,5 +1,3 @@
-extern crate codemap;
-extern crate codemap_diagnostic;
 use codemap::CodeMap;
 use codemap_diagnostic::{ColorConfig, Diagnostic, Emitter, Level, SpanLabel, SpanStyle};
 

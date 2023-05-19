@@ -32,10 +32,6 @@
 //! }
 //! ```
 
-extern crate atty;
-extern crate codemap;
-extern crate termcolor;
-
 use codemap::Span;
 
 mod emitter;
