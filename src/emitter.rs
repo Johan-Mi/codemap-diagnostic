@@ -8,7 +8,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use atty;
 use std::cmp::{min, Ordering};
 use std::collections::HashMap;
 use std::io;
@@ -17,10 +16,10 @@ use std::sync::Arc;
 use termcolor::{Buffer, Color, WriteColor};
 use termcolor::{BufferWriter, ColorChoice, ColorSpec, StandardStream};
 
+use crate::snippet::{Annotation, AnnotationType, Line, MultilineAnnotation, Style, StyledString};
+use crate::styled_buffer::StyledBuffer;
+use crate::{Diagnostic, Level, SpanLabel, SpanStyle};
 use codemap::{CodeMap, File};
-use snippet::{Annotation, AnnotationType, Line, MultilineAnnotation, Style, StyledString};
-use styled_buffer::StyledBuffer;
-use {Diagnostic, Level, SpanLabel, SpanStyle};
 
 /// Settings for terminal styling.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -1006,8 +1005,6 @@ fn emit_to_destination(
     lvl: Level,
     dst: &mut Destination,
 ) -> io::Result<()> {
-    use lock;
-
     let mut dst = dst.writable();
 
     // In order to prevent error message interleaving, where multiple error lines get intermixed
@@ -1022,7 +1019,7 @@ fn emit_to_destination(
     // On Windows, styling happens through calls to a terminal API. This prevents us from using the
     // same buffering approach.  Instead, we use a global Windows mutex, which we acquire long
     // enough to output the full error message, then we release.
-    let _buffer_lock = lock::acquire_global_lock("rustc_errors");
+    let _buffer_lock = crate::lock::acquire_global_lock("rustc_errors");
     for line in rendered_buffer {
         for part in line {
             dst.apply_style(lvl, part.style)?;

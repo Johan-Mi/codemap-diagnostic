@@ -9,7 +9,6 @@
 // except according to those terms.
 
 // Code for annotating snippets.
-use Level;
 
 #[derive(Clone, Debug, PartialOrd, Ord, PartialEq, Eq)]
 pub struct Line {
@@ -177,6 +176,6 @@ pub enum Style {
     LabelPrimary,
     LabelSecondary,
     NoStyle,
-    Level(Level),
+    Level(crate::Level),
     Highlight,
 }
