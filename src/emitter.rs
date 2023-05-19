@@ -39,9 +39,8 @@ impl ColorConfig {
     fn to_color_choice(self) -> ColorChoice {
         match self {
             ColorConfig::Always => ColorChoice::Always,
-            ColorConfig::Never => ColorChoice::Never,
             ColorConfig::Auto if atty::is(atty::Stream::Stderr) => ColorChoice::Auto,
-            ColorConfig::Auto => ColorChoice::Never,
+            ColorConfig::Never | ColorConfig::Auto => ColorChoice::Never,
         }
     }
 }
@@ -139,7 +138,9 @@ impl<'a> Emitter<'a> {
                     loc.end.column = loc.begin.column + 1;
                 }
 
-                let ann_type = if loc.begin.line != loc.end.line {
+                let ann_type = if loc.begin.line == loc.end.line {
+                    AnnotationType::Singleline
+                } else {
                     let ml = MultilineAnnotation {
                         depth: 1,
                         line_start: loc.begin.line,
@@ -151,8 +152,6 @@ impl<'a> Emitter<'a> {
                     };
                     multiline_annotations.push((loc.file.clone(), ml.clone()));
                     AnnotationType::Multiline(ml)
-                } else {
-                    AnnotationType::Singleline
                 };
                 let ann = Annotation {
                     start_col: loc.begin.column,
@@ -211,7 +210,6 @@ impl<'a> Emitter<'a> {
     }
 
     fn render_source_line(
-        &self,
         buffer: &mut StyledBuffer,
         file: &File,
         line: &Line,
@@ -633,7 +631,6 @@ impl<'a> Emitter<'a> {
     /// Add a left margin to every line but the first, given a padding length and the label being
     /// displayed, keeping the provided highlighting.
     fn msg_to_buffer(
-        &self,
         buffer: &mut StyledBuffer,
         msg: &[(String, Style)],
         padding: usize,
@@ -712,7 +709,7 @@ impl<'a> Emitter<'a> {
         spans: &[SpanLabel],
         msg: &[(String, Style)],
         code: &Option<String>,
-        level: &Level,
+        level: Level,
         max_line_num_len: usize,
         is_secondary: bool,
     ) -> io::Result<()> {
@@ -726,13 +723,13 @@ impl<'a> Emitter<'a> {
             draw_note_separator(&mut buffer, 0, max_line_num_len + 1);
             buffer.append(0, &level.to_string(), Style::HeaderMsg);
             buffer.append(0, ": ", Style::NoStyle);
-            self.msg_to_buffer(&mut buffer, msg, max_line_num_len, "note", None);
+            Self::msg_to_buffer(&mut buffer, msg, max_line_num_len, "note", None);
         } else {
-            buffer.append(0, &level.to_string(), Style::Level(*level));
+            buffer.append(0, &level.to_string(), Style::Level(level));
             if let Some(code) = code.as_ref() {
-                buffer.append(0, "[", Style::Level(*level));
-                buffer.append(0, code, Style::Level(*level));
-                buffer.append(0, "]", Style::Level(*level));
+                buffer.append(0, "[", Style::Level(level));
+                buffer.append(0, code, Style::Level(level));
+                buffer.append(0, "]", Style::Level(level));
             }
             buffer.append(0, ": ", Style::HeaderMsg);
             for (text, _) in msg.iter() {
@@ -822,7 +819,7 @@ impl<'a> Emitter<'a> {
                     width_offset + annotated_file.multiline_depth + 1
                 };
 
-                let depths = self.render_source_line(
+                let depths = Self::render_source_line(
                     &mut buffer,
                     &annotated_file.file,
                     &annotated_file.lines[line_idx],
@@ -930,7 +927,7 @@ impl<'a> Emitter<'a> {
                 &msg.spans[..],
                 &[(msg.message.clone(), Style::NoStyle)],
                 &msg.code,
-                &msg.level,
+                msg.level,
                 max_line_num_len,
                 false,
             ) {
@@ -944,7 +941,7 @@ impl<'a> Emitter<'a> {
             Err(e) => panic!("failed to emit error: {}", e),
             _ => {
                 if let Err(e) = dst.flush() {
-                    panic!("failed to emit error: {}", e)
+                    panic!("failed to emit error: {}", e);
                 }
             }
         }
@@ -1019,7 +1016,7 @@ fn overlaps(a1: &Annotation, a2: &Annotation, padding: usize) -> bool {
 
 fn emit_to_destination(
     rendered_buffer: &Vec<Vec<StyledString>>,
-    lvl: &Level,
+    lvl: Level,
     dst: &mut Destination,
 ) -> io::Result<()> {
     use lock;
@@ -1041,7 +1038,7 @@ fn emit_to_destination(
     let _buffer_lock = lock::acquire_global_lock("rustc_errors");
     for line in rendered_buffer {
         for part in line {
-            dst.apply_style(*lvl, part.style)?;
+            dst.apply_style(lvl, part.style)?;
             write!(dst, "{}", part.text)?;
             dst.reset()?;
         }
@@ -1098,7 +1095,7 @@ impl<'a, 'b> WritableDst<'a, 'b> {
     fn apply_style(&mut self, lvl: Level, style: Style) -> io::Result<()> {
         let mut spec = ColorSpec::new();
         match style {
-            Style::LineAndColumn => {}
+            Style::LineAndColumn | Style::Quotation | Style::NoStyle => {}
             Style::LineNumber => {
                 spec.set_bold(true);
                 spec.set_intense(true);
@@ -1108,7 +1105,6 @@ impl<'a, 'b> WritableDst<'a, 'b> {
                     spec.set_fg(Some(Color::Blue));
                 }
             }
-            Style::Quotation => {}
             Style::HeaderMsg => {
                 spec.set_bold(true);
                 if cfg!(windows) {
@@ -1127,7 +1123,6 @@ impl<'a, 'b> WritableDst<'a, 'b> {
                     spec.set_fg(Some(Color::Blue));
                 }
             }
-            Style::NoStyle => {}
             Style::Level(lvl) => {
                 spec = lvl.color();
                 spec.set_bold(true);
