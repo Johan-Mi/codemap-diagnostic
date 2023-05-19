@@ -426,7 +426,7 @@ impl<'a> Emitter<'a> {
 
         // If there are no annotations or the only annotations on this line are
         // MultilineLine, then there's only code being shown, stop processing.
-        if line.annotations.iter().all(|a| a.is_line()) {
+        if line.annotations.iter().all(Annotation::is_line) {
             return vec![];
         }
 
@@ -918,16 +918,16 @@ impl<'a> Emitter<'a> {
                 false,
             ) {
                 Ok(()) => (),
-                Err(e) => panic!("failed to emit error: {}", e),
+                Err(e) => panic!("failed to emit error: {e}"),
             }
         }
 
         let mut dst = self.dst.writable();
         match writeln!(dst) {
-            Err(e) => panic!("failed to emit error: {}", e),
+            Err(e) => panic!("failed to emit error: {e}"),
             _ => {
                 if let Err(e) = dst.flush() {
-                    panic!("failed to emit error: {}", e);
+                    panic!("failed to emit error: {e}");
                 }
             }
         }
