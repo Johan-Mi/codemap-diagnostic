@@ -117,7 +117,7 @@ pub struct Annotation {
 impl Annotation {
     /// Whether this annotation is a vertical line placeholder.
     pub fn is_line(&self) -> bool {
-        matches!(self.annotation_type, AnnotationType::Multiline(_))
+        matches!(self.annotation_type, AnnotationType::MultilineLine(_))
     }
 
     pub fn is_multiline(&self) -> bool {
