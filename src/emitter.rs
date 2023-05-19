@@ -980,9 +980,7 @@ fn num_overlap(
     inclusive: bool,
 ) -> bool {
     let extra = usize::from(inclusive);
-
-    (a_start >= b_start && a_start < b_end + extra)
-        || (b_start >= a_start && b_start < a_end + extra)
+    (b_start..b_end + extra).contains(&a_start) || (a_start..a_end + extra).contains(&b_start)
 }
 fn overlaps(a1: &Annotation, a2: &Annotation, padding: usize) -> bool {
     num_overlap(
