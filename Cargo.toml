@@ -12,8 +12,8 @@ Library for displaying compiler error messages, extracted from rustc.
 readme = "README.md"
 keywords = ["compiler", "error", "warning", "format", "rustc"]
 categories = ["command-line-interface"]
+rust-version = "1.70.0"
 
 [dependencies]
 codemap = { version = "0.1.0" }
-atty = "0.2.11"
 termcolor = "1.0.4"

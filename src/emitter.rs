@@ -10,8 +10,8 @@
 
 use std::cmp::{min, Ordering};
 use std::collections::HashMap;
-use std::io;
 use std::io::prelude::*;
+use std::io::{self, IsTerminal};
 use std::sync::Arc;
 use termcolor::{Buffer, Color, WriteColor};
 use termcolor::{BufferWriter, ColorChoice, ColorSpec};
@@ -38,7 +38,7 @@ impl ColorConfig {
     fn to_color_choice(self) -> ColorChoice {
         match self {
             Self::Always => ColorChoice::Always,
-            Self::Auto if atty::is(atty::Stream::Stderr) => ColorChoice::Auto,
+            Self::Auto if std::io::stderr().is_terminal() => ColorChoice::Auto,
             Self::Never | Self::Auto => ColorChoice::Never,
         }
     }
