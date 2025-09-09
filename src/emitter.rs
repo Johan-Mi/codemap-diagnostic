@@ -929,16 +929,7 @@ fn draw_col_separator(buffer: &mut StyledBuffer, line: usize, col: usize) {
 }
 
 fn draw_col_separator_no_space(buffer: &mut StyledBuffer, line: usize, col: usize) {
-    draw_col_separator_no_space_with_style(buffer, line, col, Style::LineNumber);
-}
-
-fn draw_col_separator_no_space_with_style(
-    buffer: &mut StyledBuffer,
-    line: usize,
-    col: usize,
-    style: Style,
-) {
-    buffer.putc(line, col, '│', style);
+    buffer.putc(line, col, '│', Style::LineNumber);
 }
 
 fn draw_range(
