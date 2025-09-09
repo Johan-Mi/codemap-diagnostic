@@ -694,7 +694,7 @@ impl<'a> Emitter<'a> {
         max_line_num_len: usize,
         is_secondary: bool,
     ) -> io::Result<()> {
-        let mut buffer = StyledBuffer::new();
+        let mut buffer = StyledBuffer::default();
 
         if is_secondary && spans.is_empty() {
             // This is a secondary message with no span info

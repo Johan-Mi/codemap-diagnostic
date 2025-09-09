@@ -12,20 +12,13 @@
 
 use crate::snippet::{Style, StyledString};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct StyledBuffer {
     text: Vec<Vec<char>>,
     styles: Vec<Vec<Style>>,
 }
 
 impl StyledBuffer {
-    pub fn new() -> Self {
-        Self {
-            text: vec![],
-            styles: vec![],
-        }
-    }
-
     pub fn copy_tabs(&mut self, row: usize) {
         if row < self.text.len() {
             for i in row + 1..self.text.len() {
