@@ -59,13 +59,13 @@ struct FileWithAnnotatedLines {
 impl<'a> Emitter<'a> {
     /// Creates an emitter wrapping stderr.
     #[must_use]
-    pub fn stderr(color_config: ColorConfig, code_map: Option<&'a CodeMap>) -> Emitter<'a> {
+    pub fn stderr(color_config: ColorConfig, code_map: Option<&'a CodeMap>) -> Self {
         let dst = Destination::from_stderr(color_config);
         Emitter { dst, cm: code_map }
     }
 
     /// Creates an emitter wrapping a vector.
-    pub fn vec(vec: &'a mut Vec<u8>, code_map: Option<&'a CodeMap>) -> Emitter<'a> {
+    pub fn vec(vec: &'a mut Vec<u8>, code_map: Option<&'a CodeMap>) -> Self {
         Emitter {
             dst: Raw(Box::new(vec)),
             cm: code_map,
@@ -74,7 +74,7 @@ impl<'a> Emitter<'a> {
 
     /// Creates an emitter wrapping a boxed `Write` trait object.
     #[must_use]
-    pub fn new(dst: Box<dyn Write + Send + 'a>, code_map: Option<&'a CodeMap>) -> Emitter<'a> {
+    pub fn new(dst: Box<dyn Write + Send + 'a>, code_map: Option<&'a CodeMap>) -> Self {
         Emitter {
             dst: Raw(dst),
             cm: code_map,
@@ -246,7 +246,7 @@ impl<'a> Emitter<'a> {
         // 4 | | }
         //   | |_^ test
         if line.annotations.len() == 1 {
-            if let Some(ann) = line.annotations.get(0) {
+            if let Some(ann) = line.annotations.first() {
                 if let AnnotationType::MultilineStart(depth) = ann.annotation_type {
                     if source_string
                         .chars()
@@ -380,11 +380,7 @@ impl<'a> Emitter<'a> {
             annotations_position.push((p, annotation));
             for (j, next) in annotations.iter().enumerate() {
                 if j > i {
-                    let l = if let Some(label) = &next.label {
-                        label.len() + 2
-                    } else {
-                        0
-                    };
+                    let l = next.label.as_ref().map_or(0, |label| label.len() + 2);
                     if (overlaps(next, annotation, l) // Do not allow two labels to be in the same
                                                      // line if they overlap including padding, to
                                                      // avoid situations like:
@@ -603,7 +599,7 @@ impl<'a> Emitter<'a> {
             .collect::<Vec<_>>()
     }
 
-    fn get_max_line_num(&mut self, diagnostics: &[Diagnostic]) -> usize {
+    fn get_max_line_num(&self, diagnostics: &[Diagnostic]) -> usize {
         self.cm
             .and_then(|cm| {
                 diagnostics
@@ -624,6 +620,16 @@ impl<'a> Emitter<'a> {
         label: &str,
         override_style: Option<Style>,
     ) {
+        /// Return wether `style`, or the override if present and the style is `NoStyle`.
+        fn style_or_override(style: Style, override_style: Option<Style>) -> Style {
+            if let Some(o) = override_style {
+                if style == Style::NoStyle {
+                    return o;
+                }
+            }
+            style
+        }
+
         // The extra 5 ` ` is padding that's always needed to align to the `note: `:
         //
         //   error: message
@@ -641,16 +647,6 @@ impl<'a> Emitter<'a> {
         //    |  magic `3`
         //    `max_line_num_len`
         let padding = " ".repeat(padding + label.len() + 5);
-
-        /// Return wether `style`, or the override if present and the style is `NoStyle`.
-        fn style_or_override(style: Style, override_style: Option<Style>) -> Style {
-            if let Some(o) = override_style {
-                if style == Style::NoStyle {
-                    return o;
-                }
-            }
-            style
-        }
 
         let mut line_number = 0;
 
@@ -812,9 +808,7 @@ impl<'a> Emitter<'a> {
                 let mut to_add = HashMap::new();
 
                 for (depth, style) in depths {
-                    if multilines.get(&depth).is_some() {
-                        multilines.remove(&depth);
-                    } else {
+                    if multilines.remove(&depth).is_none() {
                         to_add.insert(depth, style);
                     }
                 }
@@ -1026,7 +1020,7 @@ enum WritableDst<'a, 'b> {
 }
 
 impl<'a> Destination<'a> {
-    fn from_stderr(color: ColorConfig) -> Destination<'a> {
+    fn from_stderr(color: ColorConfig) -> Self {
         let choice = color.to_color_choice();
         Destination::Buffered(BufferWriter::stderr(choice))
     }
@@ -1042,7 +1036,7 @@ impl<'a> Destination<'a> {
     }
 }
 
-impl<'a, 'b> WritableDst<'a, 'b> {
+impl WritableDst<'_, '_> {
     fn apply_style(&mut self, lvl: Level, style: Style) -> io::Result<()> {
         let mut spec = ColorSpec::new();
         match style {
@@ -1100,7 +1094,7 @@ impl<'a, 'b> WritableDst<'a, 'b> {
     }
 }
 
-impl<'a, 'b> Write for WritableDst<'a, 'b> {
+impl Write for WritableDst<'_, '_> {
     fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
         match self {
             WritableDst::Buffered(_, buf) => buf.write(bytes),
@@ -1116,7 +1110,7 @@ impl<'a, 'b> Write for WritableDst<'a, 'b> {
     }
 }
 
-impl<'a, 'b> Drop for WritableDst<'a, 'b> {
+impl Drop for WritableDst<'_, '_> {
     fn drop(&mut self) {
         if let WritableDst::Buffered(dst, buf) = self {
             drop(dst.print(buf));

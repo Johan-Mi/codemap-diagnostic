@@ -78,18 +78,17 @@ impl ::std::fmt::Display for Level {
 impl Level {
     fn color(self) -> ColorSpec {
         let mut spec = ColorSpec::new();
-        use self::Level::{Bug, Error, Help, Note, Warning};
         match self {
-            Bug | Error => {
+            Self::Bug | Self::Error => {
                 spec.set_fg(Some(Color::Red)).set_intense(true);
             }
-            Warning => {
+            Self::Warning => {
                 spec.set_fg(Some(Color::Yellow)).set_intense(cfg!(windows));
             }
-            Note => {
+            Self::Note => {
                 spec.set_fg(Some(Color::Green)).set_intense(true);
             }
-            Help => {
+            Self::Help => {
                 spec.set_fg(Some(Color::Cyan)).set_intense(true);
             }
         }
@@ -98,14 +97,12 @@ impl Level {
 
     #[must_use]
     pub fn to_str(self) -> &'static str {
-        use self::Level::{Bug, Error, Help, Note, Warning};
-
         match self {
-            Bug => "error: internal compiler error",
-            Error => "error",
-            Warning => "warning",
-            Note => "note",
-            Help => "help",
+            Self::Bug => "error: internal compiler error",
+            Self::Error => "error",
+            Self::Warning => "warning",
+            Self::Note => "note",
+            Self::Help => "help",
         }
     }
 }
@@ -115,7 +112,7 @@ impl Level {
 pub struct SpanLabel {
     /// The location in the code.
     ///
-    /// This Span must come from the same CodeMap used to construct the Emitter.
+    /// This Span must come from the same `CodeMap` used to construct the Emitter.
     pub span: Span,
 
     /// A label used to provide context for the underlined code.
