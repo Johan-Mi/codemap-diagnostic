@@ -127,11 +127,11 @@ impl StyledBuffer {
     }
 
     pub fn append(&mut self, line: usize, string: &str, style: Style) {
-        if line >= self.text.len() {
-            self.puts(line, 0, string, style);
-        } else {
+        if line < self.text.len() {
             let col = self.text[line].len();
             self.puts(line, col, string, style);
+        } else {
+            self.puts(line, 0, string, style);
         }
     }
 
