@@ -115,13 +115,10 @@ impl StyledBuffer {
 
     pub fn prepend(&mut self, line: usize, string: &str, style: Style) {
         self.ensure_lines(line);
-        let string_len = string.len();
 
         // Push the old content over to make room for new content
-        for _ in 0..string_len {
-            self.styles[line].insert(0, Style::NoStyle);
-            self.text[line].insert(0, ' ');
-        }
+        self.styles[line].splice(0..0, std::iter::repeat(Style::NoStyle).take(string.len()));
+        self.text[line].splice(0..0, std::iter::repeat(' ').take(string.len()));
 
         self.puts(line, 0, string, style);
     }
