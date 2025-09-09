@@ -82,9 +82,9 @@ impl StyledBuffer {
     }
 
     fn ensure_lines(&mut self, line: usize) {
-        while line >= self.text.len() {
-            self.text.push(vec![]);
-            self.styles.push(vec![]);
+        if self.text.len() <= line {
+            self.text.resize(line + 1, Vec::new());
+            self.styles.resize(line + 1, Vec::new());
         }
     }
 
