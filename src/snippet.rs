@@ -165,7 +165,6 @@ pub struct StyledString {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-#[allow(dead_code)]
 pub enum Style {
     HeaderMsg,
     LineAndColumn,
@@ -177,5 +176,4 @@ pub enum Style {
     LabelSecondary,
     NoStyle,
     Level(crate::Level),
-    Highlight,
 }

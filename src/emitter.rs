@@ -1072,9 +1072,6 @@ impl WritableDst<'_, '_> {
                 spec = lvl.color();
                 spec.set_bold(true);
             }
-            Style::Highlight => {
-                spec.set_bold(true);
-            }
         }
         self.set_color(&spec)
     }
