@@ -60,7 +60,8 @@ impl<'a> Emitter<'a> {
     /// Creates an emitter wrapping stderr.
     #[must_use]
     pub fn stderr(color_config: ColorConfig, code_map: Option<&'a CodeMap>) -> Self {
-        let dst = Destination::from_stderr(color_config);
+        let choice = color_config.to_color_choice();
+        let dst = Destination::Buffered(BufferWriter::stderr(choice));
         Emitter { dst, cm: code_map }
     }
 
@@ -1011,11 +1012,6 @@ enum WritableDst<'a, 'b> {
 }
 
 impl<'a> Destination<'a> {
-    fn from_stderr(color: ColorConfig) -> Self {
-        let choice = color.to_color_choice();
-        Destination::Buffered(BufferWriter::stderr(choice))
-    }
-
     fn writable<'b>(&'b mut self) -> WritableDst<'a, 'b> {
         match self {
             Destination::Buffered(t) => {
