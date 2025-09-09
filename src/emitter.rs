@@ -1044,11 +1044,11 @@ impl WritableDst<'_, '_> {
             Style::LineNumber => {
                 spec.set_bold(true);
                 spec.set_intense(true);
-                if cfg!(windows) {
-                    spec.set_fg(Some(Color::Cyan));
+                spec.set_fg(Some(if cfg!(windows) {
+                    Color::Cyan
                 } else {
-                    spec.set_fg(Some(Color::Blue));
-                }
+                    Color::Blue
+                }));
             }
             Style::HeaderMsg => {
                 spec.set_bold(true);
@@ -1062,11 +1062,11 @@ impl WritableDst<'_, '_> {
             }
             Style::UnderlineSecondary | Style::LabelSecondary => {
                 spec.set_bold(true).set_intense(true);
-                if cfg!(windows) {
-                    spec.set_fg(Some(Color::Cyan));
+                spec.set_fg(Some(if cfg!(windows) {
+                    Color::Cyan
                 } else {
-                    spec.set_fg(Some(Color::Blue));
-                }
+                    Color::Blue
+                }));
             }
             Style::Level(lvl) => {
                 spec = lvl.color();
