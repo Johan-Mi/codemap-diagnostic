@@ -178,7 +178,7 @@ impl<'a> Emitter<'a> {
                 if &ann != a
                     && num_overlap(ann.line_start, ann.line_end, a.line_start, a.line_end, true)
                 {
-                    a.increase_depth();
+                    a.depth += 1;
                 } else {
                     break;
                 }

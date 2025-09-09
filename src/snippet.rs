@@ -28,10 +28,6 @@ pub struct MultilineAnnotation {
 }
 
 impl MultilineAnnotation {
-    pub fn increase_depth(&mut self) {
-        self.depth += 1;
-    }
-
     pub fn as_start(&self) -> Annotation {
         Annotation {
             start_col: self.start_col,
