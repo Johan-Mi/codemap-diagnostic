@@ -698,7 +698,7 @@ impl<'a> Emitter<'a> {
 
             // print out the span location and spacer before we print the annotated source
             // to do this, we need to know if this span will be primary
-            let is_primary = primary_lo.file.name() == annotated_file.file.name();
+            let is_primary = Arc::ptr_eq(&primary_lo.file, &annotated_file.file);
             if is_primary {
                 buffer.prepend(buffer_msg_line_offset, "--> ", Style::LineNumber);
                 let loc = primary_lo.clone();
@@ -880,7 +880,7 @@ fn add_annotation_to_file(
     ann: Annotation,
 ) {
     // Look through each of our files for the one we're adding to
-    if let Some(slot) = file_vec.iter_mut().find(|it| it.file.name() == file.name()) {
+    if let Some(slot) = file_vec.iter_mut().find(|it| Arc::ptr_eq(&it.file, &file)) {
         // See if we already have a line for it
         if let Some(line_slot) = slot.lines.iter_mut().find(|it| it.line_index == line_index) {
             line_slot.annotations.push(ann);
