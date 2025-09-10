@@ -563,80 +563,6 @@ impl<'a> Emitter<'a> {
             .unwrap_or(0)
     }
 
-    /// Add a left margin to every line but the first, given a padding length and the label being
-    /// displayed, keeping the provided highlighting.
-    fn msg_to_buffer(
-        buffer: &mut StyledBuffer,
-        msg: &[(&str, Style)],
-        padding: usize,
-        label: &str,
-        override_style: Option<Style>,
-    ) {
-        /// Return wether `style`, or the override if present and the style is `NoStyle`.
-        fn style_or_override(style: Style, override_style: Option<Style>) -> Style {
-            if let Some(o) = override_style
-                && style == Style::NoStyle
-            {
-                return o;
-            }
-            style
-        }
-
-        // The extra 5 ` ` is padding that's always needed to align to the `note: `:
-        //
-        //   error: message
-        //     --> file.rs:13:20
-        //      |
-        //   13 |     <CODE>
-        //      |      ^^^^
-        //      |
-        //      = note: multiline
-        //              message
-        //   ++^^^----xx
-        //    |  |   | |
-        //    |  |   | magic `2`
-        //    |  |   length of label
-        //    |  magic `3`
-        //    `max_line_num_len`
-        let padding = " ".repeat(padding + label.len() + 5);
-
-        let mut line_number = 0;
-
-        // Provided the following diagnostic message:
-        //
-        //     let msg = vec![
-        //       ("
-        //       ("highlighted multiline\nstring to\nsee how it ", Style::NoStyle),
-        //       ("looks", Style::Highlight),
-        //       ("with\nvery ", Style::NoStyle),
-        //       ("weird", Style::Highlight),
-        //       (" formats\n", Style::NoStyle),
-        //       ("see?", Style::Highlight),
-        //     ];
-        //
-        // the expected output on a note is (* surround the  highlighted text)
-        //
-        //        = note: highlighted multiline
-        //                string to
-        //                see how it *looks* with
-        //                very *weird* formats
-        //                see?
-        for (text, style) in msg {
-            let lines = text.split('\n').collect::<Vec<_>>();
-            if lines.len() > 1 {
-                for (i, line) in lines.iter().enumerate() {
-                    if i != 0 {
-                        line_number += 1;
-                        buffer.append(line_number, &padding, Style::NoStyle);
-                    }
-                    buffer.append(line_number, line, style_or_override(*style, override_style));
-                }
-            } else {
-                buffer.append(line_number, text, style_or_override(*style, override_style));
-            }
-        }
-    }
-
     fn emit_message_default(
         &mut self,
         spans: &[SpanLabel],
@@ -644,35 +570,17 @@ impl<'a> Emitter<'a> {
         code: Option<&str>,
         level: Level,
         max_line_num_len: usize,
-        is_secondary: bool,
     ) -> io::Result<()> {
         let mut buffer = StyledBuffer::default();
 
-        if is_secondary && spans.is_empty() {
-            // This is a secondary message with no span info
-            for _ in 0..max_line_num_len {
-                buffer.prepend(0, " ", Style::NoStyle);
-            }
-            draw_note_separator(&mut buffer, 0, max_line_num_len + 1);
-            buffer.append(0, &level.to_string(), Style::HeaderMsg);
-            buffer.append(0, ": ", Style::NoStyle);
-            Self::msg_to_buffer(
-                &mut buffer,
-                &[(msg, Style::NoStyle)],
-                max_line_num_len,
-                "note",
-                None,
-            );
-        } else {
-            buffer.append(0, &level.to_string(), Style::Level(level));
-            if let Some(code) = code {
-                buffer.append(0, "[", Style::Level(level));
-                buffer.append(0, code, Style::Level(level));
-                buffer.append(0, "]", Style::Level(level));
-            }
-            buffer.append(0, ": ", Style::HeaderMsg);
-            buffer.append(0, msg, Style::HeaderMsg);
+        buffer.append(0, &level.to_string(), Style::Level(level));
+        if let Some(code) = code {
+            buffer.append(0, "[", Style::Level(level));
+            buffer.append(0, code, Style::Level(level));
+            buffer.append(0, "]", Style::Level(level));
         }
+        buffer.append(0, ": ", Style::HeaderMsg);
+        buffer.append(0, msg, Style::HeaderMsg);
 
         // Preprocess all the annotations so that they are grouped by file and by line number
         // This helps us quickly iterate over the whole message (including secondary file spans)
@@ -861,7 +769,6 @@ impl<'a> Emitter<'a> {
                 msg.code.as_deref(),
                 msg.level,
                 max_line_num_len,
-                false,
             ) {
                 panic!("failed to emit error: {e}");
             }
@@ -928,10 +835,6 @@ fn draw_range(
     for col in col_from..col_to {
         buffer.putc(line, col, symbol, style);
     }
-}
-
-fn draw_note_separator(buffer: &mut StyledBuffer, line: usize, col: usize) {
-    buffer.puts(line, col, "= ", Style::LineNumber);
 }
 
 fn draw_multiline_line(
