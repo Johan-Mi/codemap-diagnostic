@@ -110,8 +110,8 @@ impl StyledBuffer {
         self.ensure_lines(line);
 
         // Push the old content over to make room for new content
-        self.styles[line].splice(0..0, std::iter::repeat(Style::NoStyle).take(string.len()));
-        self.text[line].splice(0..0, std::iter::repeat(' ').take(string.len()));
+        self.styles[line].splice(0..0, std::iter::repeat_n(Style::NoStyle, string.len()));
+        self.text[line].splice(0..0, std::iter::repeat_n(' ', string.len()));
 
         self.puts(line, 0, string, style);
     }
