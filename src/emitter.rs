@@ -1007,6 +1007,10 @@ impl<'a> Destination<'a> {
 
 impl WritableDst<'_, '_> {
     fn apply_style(&mut self, lvl: Level, style: Style) -> io::Result<()> {
+        let WritableDst::Buffered(_, t) = self else {
+            return Ok(());
+        };
+
         let mut spec = ColorSpec::new();
         match style {
             Style::LineAndColumn | Style::Quotation | Style::NoStyle => {}
@@ -1033,10 +1037,7 @@ impl WritableDst<'_, '_> {
                 spec.set_bold(true);
             }
         }
-        match self {
-            WritableDst::Buffered(_, t) => t.set_color(&spec),
-            WritableDst::Raw(_) => Ok(()),
-        }
+        t.set_color(&spec)
     }
 }
 
