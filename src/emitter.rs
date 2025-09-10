@@ -37,7 +37,7 @@ pub enum ColorConfig {
 /// Formats and prints diagnostic messages.
 pub struct Emitter<'a> {
     dst: Destination<'a>,
-    cm: Option<&'a CodeMap>,
+    code_map: Option<&'a CodeMap>,
 }
 
 struct FileWithAnnotatedLines {
@@ -56,14 +56,14 @@ impl<'a> Emitter<'a> {
             ColorConfig::Never | ColorConfig::Auto => ColorChoice::Never,
         };
         let dst = Destination::Buffered(BufferWriter::stderr(choice));
-        Emitter { dst, cm: code_map }
+        Emitter { dst, code_map }
     }
 
     /// Creates an emitter wrapping a vector.
     pub fn vec(vec: &'a mut Vec<u8>, code_map: Option<&'a CodeMap>) -> Self {
         Emitter {
             dst: Raw(Box::new(vec)),
-            cm: code_map,
+            code_map,
         }
     }
 
@@ -72,7 +72,7 @@ impl<'a> Emitter<'a> {
     pub fn new(dst: Box<dyn Write + Send + 'a>, code_map: Option<&'a CodeMap>) -> Self {
         Emitter {
             dst: Raw(dst),
-            cm: code_map,
+            code_map,
         }
     }
 
@@ -552,7 +552,7 @@ impl<'a> Emitter<'a> {
     }
 
     fn get_max_line_num(&self, diagnostics: &[Diagnostic]) -> usize {
-        self.cm
+        self.code_map
             .and_then(|cm| {
                 diagnostics
                     .iter()
@@ -672,11 +672,11 @@ impl<'a> Emitter<'a> {
 
         // Preprocess all the annotations so that they are grouped by file and by line number
         // This helps us quickly iterate over the whole message (including secondary file spans)
-        let mut annotated_files = Emitter::preprocess_annotations(self.cm, spans);
+        let mut annotated_files = Emitter::preprocess_annotations(self.code_map, spans);
 
         // Make sure our primary file comes first
         let primary_lo = if let (Some(cm), Some(primary_span)) = (
-            self.cm.as_ref(),
+            self.code_map.as_ref(),
             spans.iter().find(|x| x.style == SpanStyle::Primary),
         ) {
             cm.look_up_pos(primary_span.span.low())
