@@ -34,16 +34,6 @@ pub enum ColorConfig {
     Never,
 }
 
-impl ColorConfig {
-    fn to_color_choice(self) -> ColorChoice {
-        match self {
-            Self::Always => ColorChoice::Always,
-            Self::Auto if std::io::stderr().is_terminal() => ColorChoice::Auto,
-            Self::Never | Self::Auto => ColorChoice::Never,
-        }
-    }
-}
-
 /// Formats and prints diagnostic messages.
 pub struct Emitter<'a> {
     dst: Destination<'a>,
@@ -60,7 +50,11 @@ impl<'a> Emitter<'a> {
     /// Creates an emitter wrapping stderr.
     #[must_use]
     pub fn stderr(color_config: ColorConfig, code_map: Option<&'a CodeMap>) -> Self {
-        let choice = color_config.to_color_choice();
+        let choice = match color_config {
+            ColorConfig::Always => ColorChoice::Always,
+            ColorConfig::Auto if std::io::stderr().is_terminal() => ColorChoice::Auto,
+            ColorConfig::Never | ColorConfig::Auto => ColorChoice::Never,
+        };
         let dst = Destination::Buffered(BufferWriter::stderr(choice));
         Emitter { dst, cm: code_map }
     }
