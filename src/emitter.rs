@@ -210,22 +210,20 @@ impl<'a> Emitter<'a> {
         // 3 | |
         // 4 | | }
         //   | |_^ test
-        if line.annotations.len() == 1 {
-            if let Some(ann) = line.annotations.first() {
-                if let AnnotationType::MultilineStart(depth) = ann.annotation_type {
-                    if source_string
-                        .chars()
-                        .take(ann.start_col)
-                        .all(char::is_whitespace)
-                    {
-                        let style = if ann.is_primary {
-                            Style::UnderlinePrimary
-                        } else {
-                            Style::UnderlineSecondary
-                        };
-                        buffer.putc(line_offset, width_offset + depth - 1, '╭', style);
-                        return vec![(depth, style)];
-                    }
+        if let [ann] = &*line.annotations {
+            if let AnnotationType::MultilineStart(depth) = ann.annotation_type {
+                if source_string
+                    .chars()
+                    .take(ann.start_col)
+                    .all(char::is_whitespace)
+                {
+                    let style = if ann.is_primary {
+                        Style::UnderlinePrimary
+                    } else {
+                        Style::UnderlineSecondary
+                    };
+                    buffer.putc(line_offset, width_offset + depth - 1, '╭', style);
+                    return vec![(depth, style)];
                 }
             }
         }
