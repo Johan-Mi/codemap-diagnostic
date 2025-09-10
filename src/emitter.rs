@@ -13,8 +13,8 @@ use std::collections::HashMap;
 use std::io::prelude::*;
 use std::io::{self, IsTerminal};
 use std::sync::Arc;
-use termcolor::{Buffer, Color, WriteColor};
 use termcolor::{BufferWriter, ColorChoice, ColorSpec};
+use termcolor::{Color, WriteColor};
 
 use crate::snippet::{Annotation, AnnotationType, Line, MultilineAnnotation, Style, StyledString};
 use crate::styled_buffer::StyledBuffer;
@@ -774,12 +774,24 @@ impl<'a> Emitter<'a> {
             }
         }
 
-        let mut dst = self.dst.writable();
-        if let Err(e) = writeln!(dst) {
-            panic!("failed to emit error: {e}");
-        }
-        if let Err(e) = dst.flush() {
-            panic!("failed to emit error: {e}");
+        match &mut self.dst {
+            Destination::Buffered(writer) => {
+                let mut buffer = writer.buffer();
+                if let Err(e) = writeln!(buffer) {
+                    panic!("failed to emit error: {e}");
+                }
+                if let Err(e) = writer.print(&buffer) {
+                    panic!("failed to emit error: {e}");
+                }
+            }
+            Destination::Raw(writer) => {
+                if let Err(e) = writeln!(writer) {
+                    panic!("failed to emit error: {e}");
+                }
+                if let Err(e) = writer.flush() {
+                    panic!("failed to emit error: {e}");
+                }
+            }
         }
     }
 }
@@ -892,7 +904,7 @@ fn emit_to_destination(
                 }
                 writeln!(writer)?;
             }
-            writer.flush()
+            Ok(())
         }
     }
 }
@@ -903,23 +915,6 @@ enum Destination<'a> {
 }
 
 use self::Destination::Raw;
-
-enum WritableDst<'a, 'b> {
-    Buffered(&'b mut BufferWriter, Buffer),
-    Raw(&'b mut Box<dyn Write + Send + 'a>),
-}
-
-impl<'a> Destination<'a> {
-    fn writable<'b>(&'b mut self) -> WritableDst<'a, 'b> {
-        match self {
-            Destination::Buffered(t) => {
-                let buf = t.buffer();
-                WritableDst::Buffered(t, buf)
-            }
-            Destination::Raw(t) => WritableDst::Raw(t),
-        }
-    }
-}
 
 fn to_spec(lvl: Level, style: Style) -> ColorSpec {
     let mut spec = ColorSpec::new();
@@ -949,28 +944,4 @@ fn to_spec(lvl: Level, style: Style) -> ColorSpec {
         }
     }
     spec
-}
-
-impl Write for WritableDst<'_, '_> {
-    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-        match self {
-            WritableDst::Buffered(_, buf) => buf.write(bytes),
-            WritableDst::Raw(w) => w.write(bytes),
-        }
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        match self {
-            WritableDst::Buffered(_, buf) => buf.flush(),
-            WritableDst::Raw(w) => w.flush(),
-        }
-    }
-}
-
-impl Drop for WritableDst<'_, '_> {
-    fn drop(&mut self) {
-        if let WritableDst::Buffered(dst, buf) = self {
-            drop(dst.print(buf));
-        }
-    }
 }
