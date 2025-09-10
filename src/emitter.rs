@@ -891,8 +891,8 @@ fn emit_to_destination(
                 for part in line {
                     buffer.set_color(&to_spec(lvl, part.style))?;
                     write!(buffer, "{}", part.text)?;
-                    buffer.reset()?;
                 }
+                buffer.reset()?;
                 writeln!(buffer)?;
             }
             writer.print(&buffer)
