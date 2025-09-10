@@ -77,21 +77,14 @@ impl ::std::fmt::Display for Level {
 
 impl Level {
     fn color(self) -> ColorSpec {
+        let (fg, intense) = match self {
+            Self::Bug | Self::Error => (Color::Red, true),
+            Self::Warning => (Color::Yellow, cfg!(windows)),
+            Self::Note => (Color::Green, true),
+            Self::Help => (Color::Cyan, true),
+        };
         let mut spec = ColorSpec::new();
-        match self {
-            Self::Bug | Self::Error => {
-                spec.set_fg(Some(Color::Red)).set_intense(true);
-            }
-            Self::Warning => {
-                spec.set_fg(Some(Color::Yellow)).set_intense(cfg!(windows));
-            }
-            Self::Note => {
-                spec.set_fg(Some(Color::Green)).set_intense(true);
-            }
-            Self::Help => {
-                spec.set_fg(Some(Color::Cyan)).set_intense(true);
-            }
-        }
+        spec.set_fg(Some(fg)).set_intense(intense);
         spec
     }
 
