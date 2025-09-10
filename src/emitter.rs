@@ -8,7 +8,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::cmp::{min, Ordering};
+use std::cmp::{Ordering, min};
 use std::collections::HashMap;
 use std::io::prelude::*;
 use std::io::{self, IsTerminal};
@@ -210,22 +210,20 @@ impl<'a> Emitter<'a> {
         // 3 | |
         // 4 | | }
         //   | |_^ test
-        if let [ann] = &*line.annotations {
-            if let AnnotationType::MultilineStart(depth) = ann.annotation_type {
-                if source_string
-                    .chars()
-                    .take(ann.start_col)
-                    .all(char::is_whitespace)
-                {
-                    let style = if ann.is_primary {
-                        Style::UnderlinePrimary
-                    } else {
-                        Style::UnderlineSecondary
-                    };
-                    buffer.putc(line_offset, width_offset + depth - 1, '╭', style);
-                    return vec![(depth, style)];
-                }
-            }
+        if let [ann] = &*line.annotations
+            && let AnnotationType::MultilineStart(depth) = ann.annotation_type
+            && source_string
+                .chars()
+                .take(ann.start_col)
+                .all(char::is_whitespace)
+        {
+            let style = if ann.is_primary {
+                Style::UnderlinePrimary
+            } else {
+                Style::UnderlineSecondary
+            };
+            buffer.putc(line_offset, width_offset + depth - 1, '╭', style);
+            return vec![(depth, style)];
         }
 
         // We want to display like this:
@@ -585,10 +583,10 @@ impl<'a> Emitter<'a> {
     ) {
         /// Return wether `style`, or the override if present and the style is `NoStyle`.
         fn style_or_override(style: Style, override_style: Option<Style>) -> Style {
-            if let Some(o) = override_style {
-                if style == Style::NoStyle {
-                    return o;
-                }
+            if let Some(o) = override_style
+                && style == Style::NoStyle
+            {
+                return o;
             }
             style
         }
