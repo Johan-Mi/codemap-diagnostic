@@ -884,8 +884,8 @@ fn emit_to_destination(
         }
         writeln!(dst)?;
     }
-    dst.flush()?;
-    Ok(())
+
+    dst.flush()
 }
 
 enum Destination<'a> {
