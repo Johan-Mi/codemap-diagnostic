@@ -62,7 +62,7 @@ impl<'a> Emitter<'a> {
     /// Creates an emitter wrapping a vector.
     pub fn vec(vec: &'a mut Vec<u8>, code_map: Option<&'a CodeMap>) -> Self {
         Emitter {
-            dst: Raw(Box::new(vec)),
+            dst: Destination::Raw(Box::new(vec)),
             code_map,
         }
     }
@@ -71,7 +71,7 @@ impl<'a> Emitter<'a> {
     #[must_use]
     pub fn new(dst: Box<dyn Write + Send + 'a>, code_map: Option<&'a CodeMap>) -> Self {
         Emitter {
-            dst: Raw(dst),
+            dst: Destination::Raw(dst),
             code_map,
         }
     }
@@ -913,8 +913,6 @@ enum Destination<'a> {
     Buffered(BufferWriter),
     Raw(Box<dyn Write + Send + 'a>),
 }
-
-use self::Destination::Raw;
 
 fn to_spec(lvl: Level, style: Style) -> ColorSpec {
     let mut spec = ColorSpec::new();
