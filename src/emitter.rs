@@ -86,42 +86,6 @@ impl<'a> Emitter<'a> {
         cm: Option<&'a CodeMap>,
         spans: &[SpanLabel],
     ) -> Vec<FileWithAnnotatedLines> {
-        fn add_annotation_to_file(
-            file_vec: &mut Vec<FileWithAnnotatedLines>,
-            file: Arc<File>,
-            line_index: usize,
-            ann: Annotation,
-        ) {
-            for slot in &mut *file_vec {
-                // Look through each of our files for the one we're adding to
-                if slot.file.name() == file.name() {
-                    // See if we already have a line for it
-                    for line_slot in &mut slot.lines {
-                        if line_slot.line_index == line_index {
-                            line_slot.annotations.push(ann);
-                            return;
-                        }
-                    }
-                    // We don't have a line yet, create one
-                    slot.lines.push(Line {
-                        line_index,
-                        annotations: vec![ann],
-                    });
-                    slot.lines.sort();
-                    return;
-                }
-            }
-            // This is the first time we're seeing the file
-            file_vec.push(FileWithAnnotatedLines {
-                file,
-                lines: vec![Line {
-                    line_index,
-                    annotations: vec![ann],
-                }],
-                multiline_depth: 0,
-            });
-        }
-
         let mut output = vec![];
         let mut multiline_annotations = vec![];
 
@@ -923,6 +887,42 @@ impl<'a> Emitter<'a> {
             }
         }
     }
+}
+
+fn add_annotation_to_file(
+    file_vec: &mut Vec<FileWithAnnotatedLines>,
+    file: Arc<File>,
+    line_index: usize,
+    ann: Annotation,
+) {
+    for slot in &mut *file_vec {
+        // Look through each of our files for the one we're adding to
+        if slot.file.name() == file.name() {
+            // See if we already have a line for it
+            for line_slot in &mut slot.lines {
+                if line_slot.line_index == line_index {
+                    line_slot.annotations.push(ann);
+                    return;
+                }
+            }
+            // We don't have a line yet, create one
+            slot.lines.push(Line {
+                line_index,
+                annotations: vec![ann],
+            });
+            slot.lines.sort();
+            return;
+        }
+    }
+    // This is the first time we're seeing the file
+    file_vec.push(FileWithAnnotatedLines {
+        file,
+        lines: vec![Line {
+            line_index,
+            annotations: vec![ann],
+        }],
+        multiline_depth: 0,
+    });
 }
 
 fn draw_col_separator(buffer: &mut StyledBuffer, line: usize, col: usize) {
