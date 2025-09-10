@@ -872,20 +872,29 @@ fn emit_to_destination(
     lvl: Level,
     dst: &mut Destination,
 ) -> io::Result<()> {
-    let mut dst = dst.writable();
-
-    for line in rendered_buffer {
-        for part in line {
-            dst.apply_style(lvl, part.style)?;
-            write!(dst, "{}", part.text)?;
-            if let WritableDst::Buffered(_, t) = &mut dst {
-                t.reset()?;
+    match dst {
+        Destination::Buffered(writer) => {
+            let mut buffer = writer.buffer();
+            for line in rendered_buffer {
+                for part in line {
+                    buffer.set_color(&to_spec(lvl, part.style))?;
+                    write!(buffer, "{}", part.text)?;
+                    buffer.reset()?;
+                }
+                writeln!(buffer)?;
             }
+            writer.print(&buffer)
         }
-        writeln!(dst)?;
+        Destination::Raw(writer) => {
+            for line in rendered_buffer {
+                for part in line {
+                    write!(writer, "{}", part.text)?;
+                }
+                writeln!(writer)?;
+            }
+            writer.flush()
+        }
     }
-
-    dst.flush()
 }
 
 enum Destination<'a> {
@@ -912,40 +921,34 @@ impl<'a> Destination<'a> {
     }
 }
 
-impl WritableDst<'_, '_> {
-    fn apply_style(&mut self, lvl: Level, style: Style) -> io::Result<()> {
-        let WritableDst::Buffered(_, t) = self else {
-            return Ok(());
-        };
-
-        let mut spec = ColorSpec::new();
-        match style {
-            Style::LineAndColumn | Style::Quotation | Style::NoStyle => {}
-            Style::LineNumber | Style::UnderlineSecondary | Style::LabelSecondary => {
-                spec.set_bold(true).set_intense(true);
-                spec.set_fg(Some(if cfg!(windows) {
-                    Color::Cyan
-                } else {
-                    Color::Blue
-                }));
-            }
-            Style::HeaderMsg => {
-                spec.set_bold(true);
-                if cfg!(windows) {
-                    spec.set_intense(true).set_fg(Some(Color::White));
-                }
-            }
-            Style::UnderlinePrimary | Style::LabelPrimary => {
-                spec = lvl.color();
-                spec.set_bold(true);
-            }
-            Style::Level(lvl) => {
-                spec = lvl.color();
-                spec.set_bold(true);
+fn to_spec(lvl: Level, style: Style) -> ColorSpec {
+    let mut spec = ColorSpec::new();
+    match style {
+        Style::LineAndColumn | Style::Quotation | Style::NoStyle => {}
+        Style::LineNumber | Style::UnderlineSecondary | Style::LabelSecondary => {
+            spec.set_bold(true).set_intense(true);
+            spec.set_fg(Some(if cfg!(windows) {
+                Color::Cyan
+            } else {
+                Color::Blue
+            }));
+        }
+        Style::HeaderMsg => {
+            spec.set_bold(true);
+            if cfg!(windows) {
+                spec.set_intense(true).set_fg(Some(Color::White));
             }
         }
-        t.set_color(&spec)
+        Style::UnderlinePrimary | Style::LabelPrimary => {
+            spec = lvl.color();
+            spec.set_bold(true);
+        }
+        Style::Level(lvl) => {
+            spec = lvl.color();
+            spec.set_bold(true);
+        }
     }
+    spec
 }
 
 impl Write for WritableDst<'_, '_> {
