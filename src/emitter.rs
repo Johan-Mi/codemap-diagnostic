@@ -133,10 +133,8 @@ impl<'a> Emitter<'a> {
 
         // Find overlapping multiline annotations, put them at different depths
         multiline_annotations.sort_by_key(|a| (a.1.line_start, a.1.line_end));
-        for item in multiline_annotations.clone() {
-            let ann = item.1;
-            for item in &mut multiline_annotations {
-                let a = &mut item.1;
+        for (_, ann) in multiline_annotations.clone() {
+            for (_, a) in &mut multiline_annotations {
                 // Move all other multiline annotations overlapping with this one
                 // one level to the right.
                 if &ann != a
@@ -427,18 +425,17 @@ impl<'a> Emitter<'a> {
                 Style::UnderlineSecondary
             };
             let pos = pos + 1;
-            match annotation.annotation_type {
-                AnnotationType::MultilineStart(depth) | AnnotationType::MultilineEnd(depth) => {
-                    draw_range(
-                        buffer,
-                        '─',
-                        line_offset + pos,
-                        width_offset + depth,
-                        code_offset + annotation.start_col,
-                        style,
-                    );
-                }
-                _ => (),
+            if let AnnotationType::MultilineStart(depth) | AnnotationType::MultilineEnd(depth) =
+                annotation.annotation_type
+            {
+                draw_range(
+                    buffer,
+                    '─',
+                    line_offset + pos,
+                    width_offset + depth,
+                    code_offset + annotation.start_col,
+                    style,
+                );
             }
         }
 
@@ -518,10 +515,7 @@ impl<'a> Emitter<'a> {
         //   | |  |
         //   | |  something about `foo`
         //   | something about `fn foo()`
-        annotations_position.sort_by_key(|a| {
-            // Decreasing order
-            std::cmp::Reverse(a.1.len())
-        });
+        annotations_position.sort_by_key(|a| std::cmp::Reverse(a.1.len()));
 
         // Write the underlines.
         //
