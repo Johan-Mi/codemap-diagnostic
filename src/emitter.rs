@@ -851,7 +851,7 @@ impl<'a> Emitter<'a> {
         let max_line_num_len = max_line_num.to_string().len();
 
         for msg in msgs {
-            match self.emit_message_default(
+            if let Err(e) = self.emit_message_default(
                 &msg.spans[..],
                 &[(&msg.message, Style::NoStyle)],
                 msg.code.as_deref(),
@@ -859,8 +859,7 @@ impl<'a> Emitter<'a> {
                 max_line_num_len,
                 false,
             ) {
-                Ok(()) => (),
-                Err(e) => panic!("failed to emit error: {e}"),
+                panic!("failed to emit error: {e}");
             }
         }
 
