@@ -640,7 +640,7 @@ impl<'a> Emitter<'a> {
     fn emit_message_default(
         &mut self,
         spans: &[SpanLabel],
-        msg: &[(&str, Style)],
+        msg: &str,
         code: Option<&str>,
         level: Level,
         max_line_num_len: usize,
@@ -656,7 +656,13 @@ impl<'a> Emitter<'a> {
             draw_note_separator(&mut buffer, 0, max_line_num_len + 1);
             buffer.append(0, &level.to_string(), Style::HeaderMsg);
             buffer.append(0, ": ", Style::NoStyle);
-            Self::msg_to_buffer(&mut buffer, msg, max_line_num_len, "note", None);
+            Self::msg_to_buffer(
+                &mut buffer,
+                &[(msg, Style::NoStyle)],
+                max_line_num_len,
+                "note",
+                None,
+            );
         } else {
             buffer.append(0, &level.to_string(), Style::Level(level));
             if let Some(code) = code {
@@ -665,9 +671,7 @@ impl<'a> Emitter<'a> {
                 buffer.append(0, "]", Style::Level(level));
             }
             buffer.append(0, ": ", Style::HeaderMsg);
-            for (text, _) in msg {
-                buffer.append(0, text, Style::HeaderMsg);
-            }
+            buffer.append(0, msg, Style::HeaderMsg);
         }
 
         // Preprocess all the annotations so that they are grouped by file and by line number
@@ -853,7 +857,7 @@ impl<'a> Emitter<'a> {
         for msg in msgs {
             if let Err(e) = self.emit_message_default(
                 &msg.spans[..],
-                &[(&msg.message, Style::NoStyle)],
+                &msg.message,
                 msg.code.as_deref(),
                 msg.level,
                 max_line_num_len,
