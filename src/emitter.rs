@@ -1014,9 +1014,8 @@ impl WritableDst<'_, '_> {
         let mut spec = ColorSpec::new();
         match style {
             Style::LineAndColumn | Style::Quotation | Style::NoStyle => {}
-            Style::LineNumber => {
-                spec.set_bold(true);
-                spec.set_intense(true);
+            Style::LineNumber | Style::UnderlineSecondary | Style::LabelSecondary => {
+                spec.set_bold(true).set_intense(true);
                 spec.set_fg(Some(if cfg!(windows) {
                     Color::Cyan
                 } else {
@@ -1032,14 +1031,6 @@ impl WritableDst<'_, '_> {
             Style::UnderlinePrimary | Style::LabelPrimary => {
                 spec = lvl.color();
                 spec.set_bold(true);
-            }
-            Style::UnderlineSecondary | Style::LabelSecondary => {
-                spec.set_bold(true).set_intense(true);
-                spec.set_fg(Some(if cfg!(windows) {
-                    Color::Cyan
-                } else {
-                    Color::Blue
-                }));
             }
             Style::Level(lvl) => {
                 spec = lvl.color();
