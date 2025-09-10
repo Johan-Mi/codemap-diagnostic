@@ -977,7 +977,9 @@ fn emit_to_destination(
         for part in line {
             dst.apply_style(lvl, part.style)?;
             write!(dst, "{}", part.text)?;
-            dst.reset()?;
+            if let WritableDst::Buffered(_, t) = &mut dst {
+                t.reset()?;
+            }
         }
         writeln!(dst)?;
     }
@@ -1039,13 +1041,6 @@ impl WritableDst<'_, '_> {
         }
         match self {
             WritableDst::Buffered(_, t) => t.set_color(&spec),
-            WritableDst::Raw(_) => Ok(()),
-        }
-    }
-
-    fn reset(&mut self) -> io::Result<()> {
-        match self {
-            WritableDst::Buffered(_, t) => t.reset(),
             WritableDst::Raw(_) => Ok(()),
         }
     }
