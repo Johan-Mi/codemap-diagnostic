@@ -1056,12 +1056,8 @@ impl WritableDst<'_, '_> {
                 spec.set_bold(true);
             }
         }
-        self.set_color(&spec)
-    }
-
-    fn set_color(&mut self, color: &ColorSpec) -> io::Result<()> {
         match self {
-            WritableDst::Buffered(_, t) => t.set_color(color),
+            WritableDst::Buffered(_, t) => t.set_color(&spec),
             WritableDst::Raw(_) => Ok(()),
         }
     }
