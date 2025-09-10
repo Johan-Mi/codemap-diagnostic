@@ -69,7 +69,7 @@ impl<'a> Emitter<'a> {
 
     /// Creates an emitter wrapping a boxed `Write` trait object.
     #[must_use]
-    pub fn new(dst: Box<dyn Write + Send + 'a>, code_map: Option<&'a CodeMap>) -> Self {
+    pub fn new(dst: Box<dyn Write + 'a>, code_map: Option<&'a CodeMap>) -> Self {
         Emitter {
             dst: Destination::Raw(dst),
             code_map,
@@ -911,7 +911,7 @@ fn emit_to_destination(
 
 enum Destination<'a> {
     Buffered(BufferWriter),
-    Raw(Box<dyn Write + Send + 'a>),
+    Raw(Box<dyn Write + 'a>),
 }
 
 fn to_spec(lvl: Level, style: Style) -> ColorSpec {
