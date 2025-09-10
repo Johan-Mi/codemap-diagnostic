@@ -147,11 +147,14 @@ impl<'a> Emitter<'a> {
             }
         }
 
-        let mut max_depth = 0; // max overlapping multiline spans
+        // max overlapping multiline spans
+        let max_depth = multiline_annotations
+            .iter()
+            .map(|it| it.1.depth)
+            .max()
+            .unwrap_or(0);
+
         for (file, ann) in multiline_annotations {
-            if ann.depth > max_depth {
-                max_depth = ann.depth;
-            }
             add_annotation_to_file(&mut output, file.clone(), ann.line_start, ann.as_start());
             let middle = min(ann.line_start + 4, ann.line_end);
             for line in ann.line_start + 1..middle {
