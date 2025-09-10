@@ -866,7 +866,7 @@ impl<'a> Emitter<'a> {
 
         let mut dst = self.dst.writable();
         if let Err(e) = writeln!(dst) {
-            panic!("failed to emit error: {e}")
+            panic!("failed to emit error: {e}");
         }
         if let Err(e) = dst.flush() {
             panic!("failed to emit error: {e}");
