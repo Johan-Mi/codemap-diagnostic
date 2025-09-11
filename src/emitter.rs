@@ -87,7 +87,7 @@ impl<'a> Emitter<'a> {
         for msg in msgs {
             let buffer = render_message(
                 self.code_map,
-                &msg.spans[..],
+                &msg.spans,
                 &msg.message,
                 msg.code.as_deref(),
                 msg.level,
