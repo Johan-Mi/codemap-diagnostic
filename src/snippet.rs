@@ -10,13 +10,13 @@
 
 // Code for annotating snippets.
 
-#[derive(Clone, Debug, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(PartialOrd, Ord, PartialEq, Eq)]
 pub struct Line {
     pub line_index: usize,
     pub annotations: Vec<Annotation>,
 }
 
-#[derive(Clone, Debug, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct MultilineAnnotation {
     pub depth: usize,
     pub line_start: usize,
@@ -59,7 +59,7 @@ impl MultilineAnnotation {
     }
 }
 
-#[derive(Clone, Debug, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub enum AnnotationType {
     /// Annotation under a single line of code
     Singleline,
@@ -80,7 +80,7 @@ pub enum AnnotationType {
     MultilineLine(usize),
 }
 
-#[derive(Clone, Debug, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub struct Annotation {
     /// Start column, 0-based indexing -- counting *characters*, not
     /// utf-8 bytes. Note that it is important that this field goes
@@ -136,13 +136,12 @@ impl Annotation {
     }
 }
 
-#[derive(Debug)]
 pub struct StyledString {
     pub text: String,
     pub style: Style,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Style {
     HeaderMsg,
     LineNumber,

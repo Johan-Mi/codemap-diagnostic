@@ -12,7 +12,7 @@
 
 use crate::snippet::{Style, StyledString};
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct StyledBuffer {
     text: Vec<Vec<char>>,
     styles: Vec<Vec<Style>>,
