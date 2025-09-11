@@ -106,8 +106,11 @@ impl StyledBuffer {
     }
 
     pub fn append(&mut self, line: usize, string: &str, style: Style) {
-        let col = self.text.get(line).map_or(0, Vec::len);
-        self.puts(line, col, string, style);
+        self.ensure_lines(line);
+
+        let text = &mut self.text[line];
+        text.extend(string.chars());
+        self.styles[line].resize(text.len(), style);
     }
 
     pub fn num_lines(&self) -> usize {
