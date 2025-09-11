@@ -134,7 +134,7 @@ fn preprocess_annotations(cm: &CodeMap, spans: &[SpanLabel]) -> Vec<FileWithAnno
                 label: span_label.label.clone(),
                 r#type: AnnotationType::Singleline,
             };
-            add_annotation_to_file(&mut output, loc.file, loc.begin.line, ann);
+            add_annotation_to_file(&mut output, &loc.file, loc.begin.line, ann);
         } else {
             let ml = MultilineAnnotation {
                 depth: 1,
@@ -173,17 +173,17 @@ fn preprocess_annotations(cm: &CodeMap, spans: &[SpanLabel]) -> Vec<FileWithAnno
         .unwrap_or(0);
 
     for (file, ann) in multiline_annotations {
-        add_annotation_to_file(&mut output, file.clone(), ann.line_start, ann.as_start());
+        add_annotation_to_file(&mut output, &file, ann.line_start, ann.as_start());
         let middle = min(ann.line_start + 4, ann.line_end);
         for line in ann.line_start + 1..middle {
-            add_annotation_to_file(&mut output, file.clone(), line, ann.as_line());
+            add_annotation_to_file(&mut output, &file, line, ann.as_line());
         }
         if middle < ann.line_end - 1 {
             for line in ann.line_end - 1..ann.line_end {
-                add_annotation_to_file(&mut output, file.clone(), line, ann.as_line());
+                add_annotation_to_file(&mut output, &file, line, ann.as_line());
             }
         }
-        add_annotation_to_file(&mut output, file, ann.line_end, ann.as_end());
+        add_annotation_to_file(&mut output, &file, ann.line_end, ann.as_end());
     }
     for file_vec in &mut output {
         file_vec.multiline_depth = max_depth;
@@ -766,12 +766,12 @@ fn render_message(
 
 fn add_annotation_to_file(
     file_vec: &mut Vec<FileWithAnnotatedLines>,
-    file: Arc<File>,
+    file: &Arc<File>,
     line_index: usize,
     ann: Annotation,
 ) {
     // Look through each of our files for the one we're adding to
-    if let Some(slot) = file_vec.iter_mut().find(|it| Arc::ptr_eq(&it.file, &file)) {
+    if let Some(slot) = file_vec.iter_mut().find(|it| Arc::ptr_eq(&it.file, file)) {
         // See if we already have a line for it
         if let Some(line_slot) = slot.lines.iter_mut().find(|it| it.line_index == line_index) {
             line_slot.annotations.push(ann);
@@ -786,7 +786,7 @@ fn add_annotation_to_file(
     } else {
         // This is the first time we're seeing the file
         file_vec.push(FileWithAnnotatedLines {
-            file,
+            file: file.clone(),
             lines: vec![Line {
                 line_index,
                 annotations: vec![ann],
