@@ -208,7 +208,7 @@ fn render_source_line(
     let line_offset = buffer.num_lines();
 
     // First create the source line we will highlight.
-    buffer.puts(line_offset, code_offset, source_string, Style::Quotation);
+    buffer.puts(line_offset, code_offset, source_string, Style::None);
     buffer.puts(
         line_offset,
         0,
@@ -242,9 +242,9 @@ fn render_source_line(
             .all(char::is_whitespace)
     {
         let style = if ann.is_primary {
-            Style::UnderlinePrimary
+            Style::Primary
         } else {
-            Style::UnderlineSecondary
+            Style::Secondary
         };
         buffer.putc(line_offset, width_offset + depth - 1, '╭', style);
         return vec![(depth, style)];
@@ -446,9 +446,9 @@ fn render_source_line(
     //   |  _
     for &(pos, annotation) in &annotations_position {
         let style = if annotation.is_primary {
-            Style::UnderlinePrimary
+            Style::Primary
         } else {
-            Style::UnderlineSecondary
+            Style::Secondary
         };
         let pos = pos + 1;
         if let AnnotationType::MultilineStart(depth) | AnnotationType::MultilineEnd(depth) =
@@ -478,9 +478,9 @@ fn render_source_line(
     //   | |_
     for &(pos, annotation) in &annotations_position {
         let style = if annotation.is_primary {
-            Style::UnderlinePrimary
+            Style::Primary
         } else {
-            Style::UnderlineSecondary
+            Style::Secondary
         };
         let pos = pos + 1;
 
@@ -519,9 +519,9 @@ fn render_source_line(
     //   |  _  test
     for &(pos, annotation) in &annotations_position {
         let style = if annotation.is_primary {
-            Style::LabelPrimary
+            Style::Primary
         } else {
-            Style::LabelSecondary
+            Style::Secondary
         };
         let (pos, col) = if pos == 0 {
             (pos + 1, annotation.end_col + 1)
@@ -556,9 +556,9 @@ fn render_source_line(
     //   |  _^  test
     for &(_, annotation) in &annotations_position {
         let (underline, style) = if annotation.is_primary {
-            ('^', Style::UnderlinePrimary)
+            ('^', Style::Primary)
         } else {
-            ('-', Style::UnderlineSecondary)
+            ('-', Style::Secondary)
         };
         for p in annotation.start_col..annotation.end_col {
             buffer.putc(line_offset + 1, code_offset + p, underline, style);
@@ -569,9 +569,9 @@ fn render_source_line(
         .filter_map(|&(_, annotation)| match annotation.annotation_type {
             AnnotationType::MultilineStart(p) | AnnotationType::MultilineEnd(p) => {
                 let style = if annotation.is_primary {
-                    Style::LabelPrimary
+                    Style::Primary
                 } else {
-                    Style::LabelSecondary
+                    Style::Secondary
                 };
                 Some((p, style))
             }
@@ -644,7 +644,7 @@ fn render_message(
                     loc.position.line + 1,
                     loc.position.column + 1
                 ),
-                Style::LineAndColumn,
+                Style::None,
             );
             for _ in 0..max_line_num_len {
                 buffer.prepend(buffer_msg_line_offset, " ", Style::None);
@@ -658,7 +658,7 @@ fn render_message(
             buffer.append(
                 buffer_msg_line_offset + 1,
                 annotated_file.file.name(),
-                Style::LineAndColumn,
+                Style::None,
             );
             for _ in 0..max_line_num_len {
                 buffer.prepend(buffer_msg_line_offset + 1, " ", Style::None);
@@ -731,7 +731,7 @@ fn render_message(
                             last_buffer_line_num,
                             code_offset,
                             unannotated_line,
-                            Style::Quotation,
+                            Style::None,
                         );
 
                         for (depth, style) in &multilines {
@@ -890,8 +890,8 @@ enum Destination<'a> {
 fn to_spec(lvl: Level, style: Style) -> ColorSpec {
     let mut spec = ColorSpec::new();
     match style {
-        Style::LineAndColumn | Style::Quotation | Style::None => {}
-        Style::LineNumber | Style::UnderlineSecondary | Style::LabelSecondary => {
+        Style::None => {}
+        Style::LineNumber | Style::Secondary => {
             spec.set_bold(true).set_intense(true);
             spec.set_fg(Some(if cfg!(windows) {
                 Color::Cyan
@@ -905,7 +905,7 @@ fn to_spec(lvl: Level, style: Style) -> ColorSpec {
                 spec.set_intense(true).set_fg(Some(Color::White));
             }
         }
-        Style::UnderlinePrimary | Style::LabelPrimary => {
+        Style::Primary => {
             spec = lvl.color();
             spec.set_bold(true);
         }

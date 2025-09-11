@@ -163,13 +163,9 @@ pub struct StyledString {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Style {
     HeaderMsg,
-    LineAndColumn,
     LineNumber,
-    Quotation,
-    UnderlinePrimary,
-    UnderlineSecondary,
-    LabelPrimary,
-    LabelSecondary,
+    Primary,
+    Secondary,
     None,
     Level(crate::Level),
 }
