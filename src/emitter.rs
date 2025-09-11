@@ -660,7 +660,7 @@ fn render_message(
                 Style::LineAndColumn,
             );
             for _ in 0..max_line_num_len {
-                buffer.prepend(buffer_msg_line_offset, " ", Style::NoStyle);
+                buffer.prepend(buffer_msg_line_offset, " ", Style::None);
             }
         } else {
             // Add spacing line
@@ -674,7 +674,7 @@ fn render_message(
                 Style::LineAndColumn,
             );
             for _ in 0..max_line_num_len {
-                buffer.prepend(buffer_msg_line_offset + 1, " ", Style::NoStyle);
+                buffer.prepend(buffer_msg_line_offset + 1, " ", Style::None);
             }
         }
 
@@ -903,7 +903,7 @@ enum Destination<'a> {
 fn to_spec(lvl: Level, style: Style) -> ColorSpec {
     let mut spec = ColorSpec::new();
     match style {
-        Style::LineAndColumn | Style::Quotation | Style::NoStyle => {}
+        Style::LineAndColumn | Style::Quotation | Style::None => {}
         Style::LineNumber | Style::UnderlineSecondary | Style::LabelSecondary => {
             spec.set_bold(true).set_intense(true);
             spec.set_fg(Some(if cfg!(windows) {

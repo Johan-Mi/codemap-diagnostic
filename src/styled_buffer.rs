@@ -42,7 +42,7 @@ impl StyledBuffer {
         self.copy_tabs(3);
 
         for (row, row_style) in self.text.iter().zip(&self.styles) {
-            let mut current_style = Style::NoStyle;
+            let mut current_style = Style::None;
             let mut current_text = String::new();
 
             for (&c, &s) in row.iter().zip(row_style) {
@@ -90,7 +90,7 @@ impl StyledBuffer {
             let mut i = self.text[line].len();
             while i < col {
                 self.text[line].push(' ');
-                self.styles[line].push(Style::NoStyle);
+                self.styles[line].push(Style::None);
                 i += 1;
             }
             self.text[line].push(chr);
@@ -108,7 +108,7 @@ impl StyledBuffer {
         self.ensure_lines(line);
 
         // Push the old content over to make room for new content
-        self.styles[line].splice(0..0, std::iter::repeat_n(Style::NoStyle, string.len()));
+        self.styles[line].splice(0..0, std::iter::repeat_n(Style::None, string.len()));
         self.text[line].splice(0..0, std::iter::repeat_n(' ', string.len()));
 
         self.puts(line, 0, string, style);

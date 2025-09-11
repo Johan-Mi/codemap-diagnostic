@@ -170,6 +170,6 @@ pub enum Style {
     UnderlineSecondary,
     LabelPrimary,
     LabelSecondary,
-    NoStyle,
+    None,
     Level(crate::Level),
 }
