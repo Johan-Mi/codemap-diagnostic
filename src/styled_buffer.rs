@@ -34,7 +34,7 @@ impl StyledBuffer {
         }
     }
 
-    pub fn render(&mut self) -> Vec<Vec<StyledString>> {
+    pub fn render(mut self) -> Vec<Vec<StyledString>> {
         let mut output: Vec<Vec<StyledString>> = vec![];
         let mut styled_vec: Vec<StyledString> = vec![];
 

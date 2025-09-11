@@ -759,7 +759,7 @@ impl<'a> Emitter<'a> {
         let max_line_num_len = max_line_num.to_string().len();
 
         for msg in msgs {
-            let mut buffer = self.render_message(
+            let buffer = self.render_message(
                 &msg.spans[..],
                 &msg.message,
                 msg.code.as_deref(),
