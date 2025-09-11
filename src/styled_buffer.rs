@@ -107,11 +107,8 @@ impl StyledBuffer {
     pub fn prepend(&mut self, line: usize, string: &str, style: Style) {
         self.ensure_lines(line);
 
-        // Push the old content over to make room for new content
-        self.styles[line].splice(0..0, std::iter::repeat_n(Style::None, string.len()));
-        self.text[line].splice(0..0, std::iter::repeat_n(' ', string.len()));
-
-        self.puts(line, 0, string, style);
+        self.styles[line].splice(0..0, std::iter::repeat_n(style, string.chars().count()));
+        self.text[line].splice(0..0, string.chars());
     }
 
     pub fn append(&mut self, line: usize, string: &str, style: Style) {
