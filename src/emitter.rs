@@ -120,52 +120,47 @@ impl<'a> Emitter<'a> {
     }
 }
 
-fn preprocess_annotations(
-    cm: Option<&CodeMap>,
-    spans: &[SpanLabel],
-) -> Vec<FileWithAnnotatedLines> {
+fn preprocess_annotations(cm: &CodeMap, spans: &[SpanLabel]) -> Vec<FileWithAnnotatedLines> {
     let mut output = vec![];
     let mut multiline_annotations = vec![];
 
-    if let Some(cm) = cm {
-        for span_label in spans {
-            let mut loc = cm.look_up_span(span_label.span);
+    for span_label in spans {
+        let mut loc = cm.look_up_span(span_label.span);
 
-            // Watch out for "empty spans". If we get a span like 6..6, we
-            // want to just display a `^` at 6, so convert that to
-            // 6..7. This is degenerate input, but it's best to degrade
-            // gracefully -- and the parser likes to supply a span like
-            // that for EOF, in particular.
-            if loc.begin == loc.end {
-                loc.end.column = loc.begin.column + 1;
-            }
+        // Watch out for "empty spans". If we get a span like 6..6, we
+        // want to just display a `^` at 6, so convert that to
+        // 6..7. This is degenerate input, but it's best to degrade
+        // gracefully -- and the parser likes to supply a span like
+        // that for EOF, in particular.
+        if loc.begin == loc.end {
+            loc.end.column = loc.begin.column + 1;
+        }
 
-            let ann_type = if loc.begin.line == loc.end.line {
-                AnnotationType::Singleline
-            } else {
-                let ml = MultilineAnnotation {
-                    depth: 1,
-                    line_start: loc.begin.line,
-                    line_end: loc.end.line,
-                    start_col: loc.begin.column,
-                    end_col: loc.end.column,
-                    is_primary: span_label.style == SpanStyle::Primary,
-                    label: span_label.label.clone(),
-                };
-                multiline_annotations.push((loc.file.clone(), ml.clone()));
-                AnnotationType::Multiline(ml)
-            };
-            let ann = Annotation {
+        let ann_type = if loc.begin.line == loc.end.line {
+            AnnotationType::Singleline
+        } else {
+            let ml = MultilineAnnotation {
+                depth: 1,
+                line_start: loc.begin.line,
+                line_end: loc.end.line,
                 start_col: loc.begin.column,
                 end_col: loc.end.column,
                 is_primary: span_label.style == SpanStyle::Primary,
                 label: span_label.label.clone(),
-                annotation_type: ann_type,
             };
+            multiline_annotations.push((loc.file.clone(), ml.clone()));
+            AnnotationType::Multiline(ml)
+        };
+        let ann = Annotation {
+            start_col: loc.begin.column,
+            end_col: loc.end.column,
+            is_primary: span_label.style == SpanStyle::Primary,
+            label: span_label.label.clone(),
+            annotation_type: ann_type,
+        };
 
-            if !ann.is_multiline() {
-                add_annotation_to_file(&mut output, loc.file, loc.begin.line, ann);
-            }
+        if !ann.is_multiline() {
+            add_annotation_to_file(&mut output, loc.file, loc.begin.line, ann);
         }
     }
 
@@ -635,7 +630,7 @@ fn render_message(
 
     // Preprocess all the annotations so that they are grouped by file and by line number
     // This helps us quickly iterate over the whole message (including secondary file spans)
-    let mut annotated_files = preprocess_annotations(code_map, spans);
+    let mut annotated_files = preprocess_annotations(cm, spans);
 
     // Make sure our primary file comes first
     if let Ok(pos) = annotated_files.binary_search_by(|x| x.file.name().cmp(primary_lo.file.name()))
