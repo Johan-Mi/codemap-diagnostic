@@ -81,7 +81,7 @@ impl StyledBuffer {
         }
     }
 
-    pub fn putc(&mut self, line: usize, col: usize, chr: char, style: Style) {
+    fn putc(&mut self, line: usize, col: usize, chr: char, style: Style) {
         self.ensure_lines(line);
         if col < self.text[line].len() {
             self.text[line][col] = chr;
