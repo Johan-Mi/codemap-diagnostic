@@ -848,29 +848,22 @@ fn overlaps(a1: &Annotation, a2: &Annotation, padding: usize) -> bool {
 }
 
 fn emit_to_destination(
-    rendered_buffer: &[Vec<StyledString>],
+    rendered_buffer: &[StyledString],
     lvl: Level,
     dst: &mut Destination,
 ) -> io::Result<()> {
     match dst {
         Destination::Buffered(writer) => {
             let mut buffer = writer.buffer();
-            for line in rendered_buffer {
-                for part in line {
-                    buffer.set_color(&to_spec(lvl, part.style))?;
-                    write!(buffer, "{}", part.text)?;
-                }
-                buffer.reset()?;
-                writeln!(buffer)?;
+            for part in rendered_buffer {
+                buffer.set_color(&to_spec(lvl, part.style))?;
+                write!(buffer, "{}", part.text)?;
             }
             writer.print(&buffer)
         }
         Destination::Raw(writer) => {
-            for line in rendered_buffer {
-                for part in line {
-                    write!(writer, "{}", part.text)?;
-                }
-                writeln!(writer)?;
+            for part in rendered_buffer {
+                write!(writer, "{}", part.text)?;
             }
             Ok(())
         }

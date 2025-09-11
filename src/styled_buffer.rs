@@ -34,9 +34,8 @@ impl StyledBuffer {
         }
     }
 
-    pub fn render(mut self) -> Vec<Vec<StyledString>> {
-        let mut output: Vec<Vec<StyledString>> = vec![];
-        let mut styled_vec: Vec<StyledString> = vec![];
+    pub fn render(mut self) -> Vec<StyledString> {
+        let mut output: Vec<StyledString> = vec![];
 
         // before we render, do a little patch-up work to support tabs
         self.copy_tabs(3);
@@ -48,7 +47,7 @@ impl StyledBuffer {
             for (&c, &s) in row.iter().zip(row_style) {
                 if s != current_style {
                     if !current_text.is_empty() {
-                        styled_vec.push(StyledString {
+                        output.push(StyledString {
                             text: current_text,
                             style: current_style,
                         });
@@ -59,16 +58,17 @@ impl StyledBuffer {
                 current_text.push(c);
             }
             if !current_text.is_empty() {
-                styled_vec.push(StyledString {
+                output.push(StyledString {
                     text: current_text,
                     style: current_style,
                 });
             }
 
-            // We're done with the row, push and keep going
-            output.push(styled_vec);
-
-            styled_vec = vec![];
+            // We're done with the row, add a newline and keep going
+            output.push(StyledString {
+                text: "\n".to_owned(),
+                style: Style::None,
+            });
         }
 
         output
