@@ -65,7 +65,7 @@ pub enum AnnotationType {
     Singleline,
 
     /// Annotation enclosing the first and last character of a multiline span
-    Multiline(MultilineAnnotation),
+    Multiline,
 
     // The Multiline type above is replaced with the following three in order
     // to reuse the current label drawing code.
@@ -119,7 +119,7 @@ impl Annotation {
     pub fn is_multiline(&self) -> bool {
         matches!(
             self.r#type,
-            AnnotationType::Multiline(_)
+            AnnotationType::Multiline
                 | AnnotationType::MultilineStart(_)
                 | AnnotationType::MultilineLine(_)
                 | AnnotationType::MultilineEnd(_),

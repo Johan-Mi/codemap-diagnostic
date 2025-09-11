@@ -138,8 +138,8 @@ fn preprocess_annotations(cm: &CodeMap, spans: &[SpanLabel]) -> Vec<FileWithAnno
                 is_primary: span_label.style == SpanStyle::Primary,
                 label: span_label.label.clone(),
             };
-            multiline_annotations.push((loc.file.clone(), ml.clone()));
-            AnnotationType::Multiline(ml)
+            multiline_annotations.push((loc.file.clone(), ml));
+            AnnotationType::Multiline
         };
         let ann = Annotation {
             start_col: loc.begin.column,
