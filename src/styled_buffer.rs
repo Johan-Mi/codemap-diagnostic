@@ -34,44 +34,26 @@ impl StyledBuffer {
         }
     }
 
-    pub fn render(mut self) -> Vec<StyledString> {
-        let mut output: Vec<StyledString> = vec![];
-
+    pub fn render(&mut self) -> impl Iterator<Item = StyledString> {
         // before we render, do a little patch-up work to support tabs
         self.copy_tabs(3);
 
-        for (row, row_style) in self.text.iter().zip(&self.styles) {
-            let mut current_style = Style::None;
-            let mut current_text = String::new();
-
-            for (&c, &s) in row.iter().zip(row_style) {
-                if s != current_style {
-                    if !current_text.is_empty() {
-                        output.push(StyledString {
-                            text: current_text,
-                            style: current_style,
-                        });
-                    }
-                    current_style = s;
-                    current_text = String::new();
-                }
-                current_text.push(c);
-            }
-            if !current_text.is_empty() {
-                output.push(StyledString {
-                    text: current_text,
-                    style: current_style,
-                });
-            }
-
-            // We're done with the row, add a newline and keep going
-            output.push(StyledString {
-                text: "\n".to_owned(),
-                style: Style::None,
-            });
-        }
-
-        output
+        self.text
+            .iter()
+            .zip(&self.styles)
+            .flat_map(|(row, row_style)| {
+                let mut row = row.iter();
+                row_style
+                    .chunk_by(PartialEq::eq)
+                    .map(move |chunk| StyledString {
+                        text: row.by_ref().take(chunk.len()).collect(),
+                        style: chunk[0],
+                    })
+                    .chain(std::iter::once(StyledString {
+                        text: "\n".to_owned(),
+                        style: Style::None,
+                    }))
+            })
     }
 
     fn ensure_lines(&mut self, line: usize) {

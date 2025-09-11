@@ -82,8 +82,8 @@ impl<'a> Emitter<'a> {
         let max_line_num_len = max_line_num.to_string().len();
 
         for msg in msgs {
-            let buffer = render_message(self.code_map, msg, max_line_num_len);
-            if let Err(e) = emit_to_destination(&buffer.render(), msg.level, &mut self.dst) {
+            let mut buffer = render_message(self.code_map, msg, max_line_num_len);
+            if let Err(e) = emit_to_destination(buffer.render(), msg.level, &mut self.dst) {
                 panic!("failed to emit error: {e}");
             }
         }
@@ -848,7 +848,7 @@ fn overlaps(a1: &Annotation, a2: &Annotation, padding: usize) -> bool {
 }
 
 fn emit_to_destination(
-    rendered_buffer: &[StyledString],
+    rendered_buffer: impl Iterator<Item = StyledString>,
     lvl: Level,
     dst: &mut Destination,
 ) -> io::Result<()> {
