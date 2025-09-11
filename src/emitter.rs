@@ -126,8 +126,15 @@ fn preprocess_annotations(cm: &CodeMap, spans: &[SpanLabel]) -> Vec<FileWithAnno
             loc.end.column = loc.begin.column + 1;
         }
 
-        let ann_type = if loc.begin.line == loc.end.line {
-            AnnotationType::Singleline
+        if loc.begin.line == loc.end.line {
+            let ann = Annotation {
+                start_col: loc.begin.column,
+                end_col: loc.end.column,
+                is_primary: span_label.style == SpanStyle::Primary,
+                label: span_label.label.clone(),
+                r#type: AnnotationType::Singleline,
+            };
+            add_annotation_to_file(&mut output, loc.file, loc.begin.line, ann);
         } else {
             let ml = MultilineAnnotation {
                 depth: 1,
@@ -139,18 +146,6 @@ fn preprocess_annotations(cm: &CodeMap, spans: &[SpanLabel]) -> Vec<FileWithAnno
                 label: span_label.label.clone(),
             };
             multiline_annotations.push((loc.file.clone(), ml));
-            AnnotationType::Multiline
-        };
-        let ann = Annotation {
-            start_col: loc.begin.column,
-            end_col: loc.end.column,
-            is_primary: span_label.style == SpanStyle::Primary,
-            label: span_label.label.clone(),
-            r#type: ann_type,
-        };
-
-        if !ann.is_multiline() {
-            add_annotation_to_file(&mut output, loc.file, loc.begin.line, ann);
         }
     }
 

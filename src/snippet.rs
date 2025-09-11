@@ -64,14 +64,6 @@ pub enum AnnotationType {
     /// Annotation under a single line of code
     Singleline,
 
-    /// Annotation enclosing the first and last character of a multiline span
-    Multiline,
-
-    // The Multiline type above is replaced with the following three in order
-    // to reuse the current label drawing code.
-    //
-    // Each of these corresponds to one part of the following diagram:
-    //
     //     x |   foo(1 + bar(x,
     //       |  _________^              < MultilineStart
     //     x | |             y),        < MultilineLine
@@ -114,16 +106,6 @@ impl Annotation {
     /// Whether this annotation is a vertical line placeholder.
     pub fn is_line(&self) -> bool {
         matches!(self.r#type, AnnotationType::MultilineLine(_))
-    }
-
-    pub fn is_multiline(&self) -> bool {
-        matches!(
-            self.r#type,
-            AnnotationType::Multiline
-                | AnnotationType::MultilineStart(_)
-                | AnnotationType::MultilineLine(_)
-                | AnnotationType::MultilineEnd(_),
-        )
     }
 
     pub fn len(&self) -> usize {
