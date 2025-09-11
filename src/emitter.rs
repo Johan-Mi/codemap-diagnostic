@@ -602,7 +602,7 @@ fn render_message(
 ) -> StyledBuffer {
     let mut buffer = StyledBuffer::default();
 
-    buffer.append(0, &msg.level.to_string(), Style::Level(msg.level));
+    buffer.append(0, msg.level.to_str(), Style::Level(msg.level));
     if let Some(code) = &msg.code {
         buffer.append(0, "[", Style::Level(msg.level));
         buffer.append(0, code, Style::Level(msg.level));
