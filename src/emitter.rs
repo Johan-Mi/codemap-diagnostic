@@ -626,20 +626,18 @@ fn render_message(
     buffer.append(0, ": ", Style::HeaderMsg);
     buffer.append(0, msg, Style::HeaderMsg);
 
+    // If we don't have span information, we're done
+    let Some(cm) = code_map else { return buffer };
+    let Some(primary_span) = spans.iter().find(|x| x.style == SpanStyle::Primary) else {
+        return buffer;
+    };
+    let primary_lo = cm.look_up_pos(primary_span.span.low());
+
     // Preprocess all the annotations so that they are grouped by file and by line number
     // This helps us quickly iterate over the whole message (including secondary file spans)
     let mut annotated_files = preprocess_annotations(code_map, spans);
 
     // Make sure our primary file comes first
-    let primary_lo = if let (Some(cm), Some(primary_span)) = (
-        code_map,
-        spans.iter().find(|x| x.style == SpanStyle::Primary),
-    ) {
-        cm.look_up_pos(primary_span.span.low())
-    } else {
-        // If we don't have span information, we're done
-        return buffer;
-    };
     if let Ok(pos) = annotated_files.binary_search_by(|x| x.file.name().cmp(primary_lo.file.name()))
     {
         annotated_files.swap(0, pos);
