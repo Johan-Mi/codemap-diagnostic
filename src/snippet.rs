@@ -34,7 +34,7 @@ impl MultilineAnnotation {
             end_col: self.start_col + 1,
             is_primary: self.is_primary,
             label: None,
-            annotation_type: AnnotationType::MultilineStart(self.depth),
+            r#type: AnnotationType::MultilineStart(self.depth),
         }
     }
 
@@ -44,7 +44,7 @@ impl MultilineAnnotation {
             end_col: self.end_col,
             is_primary: self.is_primary,
             label: self.label.clone(),
-            annotation_type: AnnotationType::MultilineEnd(self.depth),
+            r#type: AnnotationType::MultilineEnd(self.depth),
         }
     }
 
@@ -54,7 +54,7 @@ impl MultilineAnnotation {
             end_col: 0,
             is_primary: self.is_primary,
             label: None,
-            annotation_type: AnnotationType::MultilineLine(self.depth),
+            r#type: AnnotationType::MultilineLine(self.depth),
         }
     }
 }
@@ -107,18 +107,18 @@ pub struct Annotation {
 
     /// Is this a single line, multiline or multiline span minimized down to a
     /// smaller span.
-    pub annotation_type: AnnotationType,
+    pub r#type: AnnotationType,
 }
 
 impl Annotation {
     /// Whether this annotation is a vertical line placeholder.
     pub fn is_line(&self) -> bool {
-        matches!(self.annotation_type, AnnotationType::MultilineLine(_))
+        matches!(self.r#type, AnnotationType::MultilineLine(_))
     }
 
     pub fn is_multiline(&self) -> bool {
         matches!(
-            self.annotation_type,
+            self.r#type,
             AnnotationType::Multiline(_)
                 | AnnotationType::MultilineStart(_)
                 | AnnotationType::MultilineLine(_)
@@ -148,7 +148,7 @@ impl Annotation {
     pub fn takes_space(&self) -> bool {
         // Multiline annotations always have to keep vertical space.
         matches!(
-            self.annotation_type,
+            self.r#type,
             AnnotationType::MultilineStart(_) | AnnotationType::MultilineEnd(_),
         )
     }

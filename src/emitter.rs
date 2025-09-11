@@ -146,7 +146,7 @@ fn preprocess_annotations(cm: &CodeMap, spans: &[SpanLabel]) -> Vec<FileWithAnno
             end_col: loc.end.column,
             is_primary: span_label.style == SpanStyle::Primary,
             label: span_label.label.clone(),
-            annotation_type: ann_type,
+            r#type: ann_type,
         };
 
         if !ann.is_multiline() {
@@ -235,7 +235,7 @@ fn render_source_line(
     // 4 | | }
     //   | |_^ test
     if let [ann] = &*line.annotations
-        && let AnnotationType::MultilineStart(depth) = ann.annotation_type
+        && let AnnotationType::MultilineStart(depth) = ann.r#type
         && source_string
             .chars()
             .take(ann.start_col)
@@ -452,7 +452,7 @@ fn render_source_line(
         };
         let pos = pos + 1;
         if let AnnotationType::MultilineStart(depth) | AnnotationType::MultilineEnd(depth) =
-            annotation.annotation_type
+            annotation.r#type
         {
             draw_range(
                 buffer,
@@ -489,7 +489,7 @@ fn render_source_line(
                 buffer.putc(p, code_offset + annotation.start_col, '│', style);
             }
         }
-        match annotation.annotation_type {
+        match annotation.r#type {
             AnnotationType::MultilineStart(depth) => {
                 buffer.putc(line_offset + pos, width_offset + depth - 1, '╭', style);
                 for p in line_offset + pos + 1..line_offset + line_len + 2 {
@@ -566,7 +566,7 @@ fn render_source_line(
     }
     annotations_position
         .iter()
-        .filter_map(|&(_, annotation)| match annotation.annotation_type {
+        .filter_map(|&(_, annotation)| match annotation.r#type {
             AnnotationType::MultilineStart(p) | AnnotationType::MultilineEnd(p) => {
                 let style = if annotation.is_primary {
                     Style::Primary
