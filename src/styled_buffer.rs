@@ -81,27 +81,21 @@ impl StyledBuffer {
         }
     }
 
-    fn putc(&mut self, line: usize, col: usize, chr: char, style: Style) {
-        self.ensure_lines(line);
-        if col < self.text[line].len() {
-            self.text[line][col] = chr;
-            self.styles[line][col] = style;
-        } else {
-            let mut i = self.text[line].len();
-            while i < col {
-                self.text[line].push(' ');
-                self.styles[line].push(Style::None);
-                i += 1;
-            }
-            self.text[line].push(chr);
-            self.styles[line].push(style);
-        }
-    }
-
     pub fn puts(&mut self, line: usize, col: usize, string: &str, style: Style) {
-        for (c, n) in string.chars().zip(col..) {
-            self.putc(line, n, c, style);
+        self.ensure_lines(line);
+
+        let text = &mut self.text[line];
+        let styles = &mut self.styles[line];
+
+        if text.len() < col {
+            text.resize(col, ' ');
+            styles.resize(col, Style::None);
         }
+
+        let count = string.chars().count();
+        let end = text.len().min(col + count);
+        text.splice(col..end, string.chars());
+        styles.splice(col..end, std::iter::repeat_n(style, count));
     }
 
     pub fn prepend(&mut self, line: usize, string: &str, style: Style) {
