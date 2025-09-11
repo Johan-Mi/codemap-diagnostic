@@ -563,14 +563,14 @@ impl<'a> Emitter<'a> {
             .unwrap_or(0)
     }
 
-    fn emit_message_default(
-        &mut self,
+    fn render_message(
+        &self,
         spans: &[SpanLabel],
         msg: &str,
         code: Option<&str>,
         level: Level,
         max_line_num_len: usize,
-    ) -> io::Result<()> {
+    ) -> StyledBuffer {
         let mut buffer = StyledBuffer::default();
 
         buffer.append(0, &level.to_string(), Style::Level(level));
@@ -593,9 +593,8 @@ impl<'a> Emitter<'a> {
         ) {
             cm.look_up_pos(primary_span.span.low())
         } else {
-            // If we don't have span information, emit and exit
-            emit_to_destination(&buffer.render(), level, &mut self.dst)?;
-            return Ok(());
+            // If we don't have span information, we're done
+            return buffer;
         };
         if let Ok(pos) =
             annotated_files.binary_search_by(|x| x.file.name().cmp(primary_lo.file.name()))
@@ -748,10 +747,7 @@ impl<'a> Emitter<'a> {
             }
         }
 
-        // final step: take our styled buffer, render it, then output it
-        emit_to_destination(&buffer.render(), level, &mut self.dst)?;
-
-        Ok(())
+        buffer
     }
 
     /// Print a group of diagnostic messages.
@@ -763,13 +759,14 @@ impl<'a> Emitter<'a> {
         let max_line_num_len = max_line_num.to_string().len();
 
         for msg in msgs {
-            if let Err(e) = self.emit_message_default(
+            let mut buffer = self.render_message(
                 &msg.spans[..],
                 &msg.message,
                 msg.code.as_deref(),
                 msg.level,
                 max_line_num_len,
-            ) {
+            );
+            if let Err(e) = emit_to_destination(&buffer.render(), msg.level, &mut self.dst) {
                 panic!("failed to emit error: {e}");
             }
         }
