@@ -83,7 +83,7 @@ pub enum AnnotationType {
     MultilineEnd(usize),
     /// Line at the left enclosing the lines of a fully shown multiline span
     // Just a placeholder for the drawing algorithm, to know that it shouldn't skip the first 4
-    // and last 2 lines of code. The actual line is drawn in `emit_message_default` and not in
+    // and last 2 lines of code. The actual line is drawn in `render_message` and not in
     // `draw_multiline_line`.
     MultilineLine(usize),
 }
