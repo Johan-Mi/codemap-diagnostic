@@ -158,7 +158,7 @@ fn preprocess_annotations<'a>(
         for (_, a) in &mut multiline_annotations {
             // Move all other multiline annotations overlapping with this one
             // one level to the right.
-            if &ann != a
+            if ann != *a
                 && num_overlap(ann.line_start, ann.line_end, a.line_start, a.line_end, true)
             {
                 a.depth += 1;
