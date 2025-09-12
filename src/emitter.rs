@@ -691,12 +691,7 @@ fn render_message(
 
             let to_add: HashMap<_, _> = depths
                 .into_iter()
-                .filter_map(|(depth, style)| {
-                    multilines
-                        .remove(&depth)
-                        .is_none()
-                        .then_some((depth, style))
-                })
+                .filter(|(depth, _)| multilines.remove(depth).is_none())
                 .collect();
 
             // Set the multiline annotation vertical lines to the left of
