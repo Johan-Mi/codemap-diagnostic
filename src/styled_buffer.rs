@@ -20,16 +20,12 @@ pub struct StyledBuffer {
 
 impl StyledBuffer {
     pub fn copy_tabs(&mut self, row: usize) {
-        if row < self.text.len() {
-            for i in row + 1..self.text.len() {
-                for j in 0..self.text[i].len() {
-                    if self.text[row].len() > j
-                        && self.text[row][j] == '\t'
-                        && self.text[i][j] == ' '
-                    {
-                        self.text[i][j] = '\t';
-                    }
-                }
+        let Some(([.., row], rest)) = self.text.split_at_mut_checked(row + 1) else {
+            return;
+        };
+        for t in rest {
+            for (_, b) in std::iter::zip(&*row, t).filter(|(a, b)| **a == '\t' && **b == ' ') {
+                *b = '\t';
             }
         }
     }
