@@ -689,13 +689,15 @@ fn render_message(
                 code_offset,
             );
 
-            let mut to_add = HashMap::new();
-
-            for (depth, style) in depths {
-                if multilines.remove(&depth).is_none() {
-                    to_add.insert(depth, style);
-                }
-            }
+            let to_add: HashMap<_, _> = depths
+                .into_iter()
+                .filter_map(|(depth, style)| {
+                    multilines
+                        .remove(&depth)
+                        .is_none()
+                        .then_some((depth, style))
+                })
+                .collect();
 
             // Set the multiline annotation vertical lines to the left of
             // the code in this line.
