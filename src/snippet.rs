@@ -16,7 +16,7 @@ pub struct Line<'a> {
     pub annotations: Vec<Annotation<'a>>,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone)]
 pub struct MultilineAnnotation<'a> {
     pub depth: usize,
     pub line_start: usize,

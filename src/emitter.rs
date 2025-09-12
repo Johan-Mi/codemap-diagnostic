@@ -140,7 +140,7 @@ fn preprocess_annotations<'a>(
             add_annotation_to_file(&mut output, &loc.file, loc.begin.line, ann);
         } else {
             let ml = MultilineAnnotation {
-                depth: 1,
+                depth: 0,
                 line_start: loc.begin.line,
                 line_end: loc.end.line,
                 start_col: loc.begin.column,
@@ -154,18 +154,19 @@ fn preprocess_annotations<'a>(
 
     // Find overlapping multiline annotations, put them at different depths
     multiline_annotations.sort_by_key(|a| (a.1.line_start, a.1.line_end));
-    for (_, ann) in multiline_annotations.clone() {
-        for (_, a) in &mut multiline_annotations {
-            // Move all other multiline annotations overlapping with this one
-            // one level to the right.
-            if ann != *a
-                && num_overlap(ann.line_start, ann.line_end, a.line_start, a.line_end, true)
-            {
-                a.depth += 1;
-            } else {
-                break;
-            }
-        }
+    for i in 0..multiline_annotations.len() {
+        multiline_annotations[i].1.depth = 1 + multiline_annotations[0..i]
+            .iter()
+            .filter(|other| {
+                num_overlap(
+                    multiline_annotations[i].1.line_start,
+                    multiline_annotations[i].1.line_end,
+                    other.1.line_start,
+                    other.1.line_end,
+                    true,
+                )
+            })
+            .count();
     }
 
     // max overlapping multiline spans
