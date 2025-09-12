@@ -148,7 +148,7 @@ fn preprocess_annotations<'a>(
                 is_primary: span_label.style == SpanStyle::Primary,
                 label: span_label.label.as_deref(),
             };
-            multiline_annotations.push((loc.file.clone(), ml));
+            multiline_annotations.push((loc.file, ml));
         }
     }
 
