@@ -11,24 +11,24 @@
 // Code for annotating snippets.
 
 #[derive(PartialOrd, Ord, PartialEq, Eq)]
-pub struct Line {
+pub struct Line<'a> {
     pub line_index: usize,
-    pub annotations: Vec<Annotation>,
+    pub annotations: Vec<Annotation<'a>>,
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct MultilineAnnotation {
+pub struct MultilineAnnotation<'a> {
     pub depth: usize,
     pub line_start: usize,
     pub line_end: usize,
     pub start_col: usize,
     pub end_col: usize,
     pub is_primary: bool,
-    pub label: Option<String>,
+    pub label: Option<&'a str>,
 }
 
-impl MultilineAnnotation {
-    pub fn as_start(&self) -> Annotation {
+impl<'a> MultilineAnnotation<'a> {
+    pub fn as_start(&self) -> Annotation<'a> {
         Annotation {
             start_col: self.start_col,
             end_col: self.start_col + 1,
@@ -38,17 +38,17 @@ impl MultilineAnnotation {
         }
     }
 
-    pub fn as_end(&self) -> Annotation {
+    pub fn as_end(&self) -> Annotation<'a> {
         Annotation {
             start_col: self.end_col.saturating_sub(1),
             end_col: self.end_col,
             is_primary: self.is_primary,
-            label: self.label.clone(),
+            label: self.label,
             r#type: AnnotationType::MultilineEnd(self.depth),
         }
     }
 
-    pub fn as_line(&self) -> Annotation {
+    pub fn as_line(&self) -> Annotation<'a> {
         Annotation {
             start_col: 0,
             end_col: 0,
@@ -81,7 +81,7 @@ pub enum AnnotationType {
 }
 
 #[derive(Clone, PartialOrd, Ord, PartialEq, Eq)]
-pub struct Annotation {
+pub struct Annotation<'a> {
     /// Start column, 0-based indexing -- counting *characters*, not
     /// utf-8 bytes. Note that it is important that this field goes
     /// first, so that when we sort, we sort orderings by start
@@ -95,14 +95,14 @@ pub struct Annotation {
     pub is_primary: bool,
 
     /// Optional label to display adjacent to the annotation.
-    pub label: Option<String>,
+    pub label: Option<&'a str>,
 
     /// Is this a single line, multiline or multiline span minimized down to a
     /// smaller span.
     pub r#type: AnnotationType,
 }
 
-impl Annotation {
+impl Annotation<'_> {
     /// Whether this annotation is a vertical line placeholder.
     pub fn is_line(&self) -> bool {
         matches!(self.r#type, AnnotationType::MultilineLine(_))
@@ -124,7 +124,7 @@ impl Annotation {
         //       |
         //
         // Note that this would be the complete output users would see.
-        !self.label.as_deref().unwrap_or("").is_empty()
+        !self.label.unwrap_or("").is_empty()
     }
 
     pub fn takes_space(&self) -> bool {

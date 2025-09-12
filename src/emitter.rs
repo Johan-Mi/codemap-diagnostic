@@ -40,9 +40,9 @@ pub struct Emitter<'a> {
     code_map: Option<&'a CodeMap>,
 }
 
-struct FileWithAnnotatedLines {
+struct FileWithAnnotatedLines<'a> {
     file: Arc<File>,
-    lines: Vec<Line>,
+    lines: Vec<Line<'a>>,
     multiline_depth: usize,
 }
 
@@ -110,7 +110,10 @@ impl<'a> Emitter<'a> {
     }
 }
 
-fn preprocess_annotations(cm: &CodeMap, spans: &[SpanLabel]) -> Vec<FileWithAnnotatedLines> {
+fn preprocess_annotations<'a>(
+    cm: &CodeMap,
+    spans: &'a [SpanLabel],
+) -> Vec<FileWithAnnotatedLines<'a>> {
     let mut output = vec![];
     let mut multiline_annotations = vec![];
 
@@ -131,7 +134,7 @@ fn preprocess_annotations(cm: &CodeMap, spans: &[SpanLabel]) -> Vec<FileWithAnno
                 start_col: loc.begin.column,
                 end_col: loc.end.column,
                 is_primary: span_label.style == SpanStyle::Primary,
-                label: span_label.label.clone(),
+                label: span_label.label.as_deref(),
                 r#type: AnnotationType::Singleline,
             };
             add_annotation_to_file(&mut output, &loc.file, loc.begin.line, ann);
@@ -143,7 +146,7 @@ fn preprocess_annotations(cm: &CodeMap, spans: &[SpanLabel]) -> Vec<FileWithAnno
                 start_col: loc.begin.column,
                 end_col: loc.end.column,
                 is_primary: span_label.style == SpanStyle::Primary,
-                label: span_label.label.clone(),
+                label: span_label.label.as_deref(),
             };
             multiline_annotations.push((loc.file.clone(), ml));
         }
@@ -764,11 +767,11 @@ fn render_message(
     buffer
 }
 
-fn add_annotation_to_file(
-    file_vec: &mut Vec<FileWithAnnotatedLines>,
+fn add_annotation_to_file<'a>(
+    file_vec: &mut Vec<FileWithAnnotatedLines<'a>>,
     file: &Arc<File>,
     line_index: usize,
-    ann: Annotation,
+    ann: Annotation<'a>,
 ) {
     // Look through each of our files for the one we're adding to
     if let Some(slot) = file_vec.iter_mut().find(|it| Arc::ptr_eq(&it.file, file)) {
